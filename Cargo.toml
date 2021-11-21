@@ -1,0 +1,15 @@
+[package]
+name = "advent_2021"
+version = "2021.11.30"
+edition = "2021"
+rust-version = "1.56"
+
+repository = "https://github.com/reckenrode/verify-archive"
+license = "GPL-3.0-only"
+readme = "README.md"
+
+authors = ["Randy Eckenrode <randy@largeandhighquality.com>"]
+description = "My solutions for Advent of Code 2021"
+
+[dependencies]
+clap = "= 3.0.0-beta.5"
