@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-use std::{error::Error, path::PathBuf};
+use std::path::PathBuf;
 
 use clap::Parser;
 
@@ -11,7 +11,7 @@ pub(crate) struct Day1 {
 }
 
 impl Day1 {
-    pub(crate) fn run(self) -> Result<(), Box<dyn Error>> {
+    pub(crate) fn run(self) -> anyhow::Result<()> {
         println!("Santa does some stuff");
         Ok(())
     }

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-use std::error::Error;
-
 mod app;
 mod days;
 mod macros;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
     let app = app::parse_options();
-    app.run()
+    if let Err(error) = app.run() {
+        println!("Something went wrong while solving the problem: {}", error);
+    }
 }

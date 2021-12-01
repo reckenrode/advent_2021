@@ -13,7 +13,7 @@ macro_rules! declare_days {
             )*
         }
         impl App {
-            pub(crate) fn run(self) -> Result<(), Box<dyn std::error::Error>> {
+            pub(crate) fn run(self) -> anyhow::Result<()> {
                 match self.cmd {
                     $(
                         Command::$x(day) => day.run(),
