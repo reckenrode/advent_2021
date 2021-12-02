@@ -8,7 +8,7 @@ use std::{
     path::PathBuf,
 };
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use clap::Parser;
 
 #[derive(Parser)]
@@ -38,7 +38,7 @@ impl Day1 {
 pub(crate) fn count_increases<'a>(
     xs: impl IntoIterator<Item = &'a i32> + 'a,
     window_size: NonZeroUsize,
-) -> i32 {
+) -> usize {
     fn update_window(window: &mut VecDeque<i32>, value: i32) {
         for x in window.into_iter() {
             *x = *x + value;
@@ -58,7 +58,7 @@ pub(crate) fn count_increases<'a>(
         if let Some(previous) = window.pop_front() {
             update_window(&mut window, *value);
             let current = *window.front().unwrap_or(value);
-            count += (current > previous) as i32;
+            count += (current > previous) as usize;
         }
         window.push_back(*value);
     }
@@ -66,7 +66,10 @@ pub(crate) fn count_increases<'a>(
 }
 
 fn parse_lines(reader: impl BufRead) -> Result<Vec<i32>> {
-    reader.lines().map(|line| Ok(line?.parse()?)).collect()
+    reader
+        .lines()
+        .map(|line| line?.parse().map_err(Error::from))
+        .collect()
 }
 
 #[cfg(test)]
@@ -74,6 +77,15 @@ mod tests {
     use super::*;
 
     const EXAMPLE_INPUT: [i32; 10] = [199, 200, 208, 210, 200, 207, 240, 269, 260, 263];
+
+    #[test]
+    fn parser_parses_the_file() -> Result<()> {
+        let expected_output = EXAMPLE_INPUT;
+        let input = "199\n200\n208\n210\n200\n207\n240\n269\n260\n263\n";
+        let result = parse_lines(input.as_bytes())?;
+        assert_eq!(result, expected_output);
+        Ok(())
+    }
 
     #[test]
     fn example_1_has_seven_increases() -> Result<()> {
