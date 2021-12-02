@@ -1,6 +1,6 @@
 [package]
 name = "advent_2021"
-version = "2021.11.30"
+version = "2021.12.2"
 edition = "2021"
 rust-version = "1.56"
 

@@ -13,6 +13,7 @@ pub(crate) struct App {
 
 declare_days! [
     Day1,
+    Day2,
 ];
 
 pub(crate) fn parse_options() -> App {
