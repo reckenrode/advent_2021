@@ -15,15 +15,17 @@ pub(crate) struct Day2 {
     input: PathBuf,
     #[clap(short, long)]
     multiply_results: bool,
+    #[clap(short, long)]
+    use_aim: bool,
 }
 
 impl Day2 {
-    fn parse_input(reader: impl BufRead) -> Result<Program> {
+    fn parse_input(reader: impl BufRead, use_aim: bool) -> Result<Program> {
         let result: Result<Vec<_>> = reader
             .lines()
             .filter_map(|line| match line {
                 Ok(str) if str.is_empty() => None,
-                Ok(str) => Some(Command::parse(&str)),
+                Ok(str) => Some(Command::parse(&str, use_aim)),
                 Err(err) => Some(Err(err.into())),
             })
             .collect();
@@ -33,7 +35,7 @@ impl Day2 {
     pub fn run(self) -> Result<()> {
         let file = File::open(self.input)?;
         let reader = BufReader::new(file);
-        let program = Day2::parse_input(reader)?;
+        let program = Day2::parse_input(reader, self.use_aim)?;
         let result = program.run();
         println!("Position: \t{}\nDepth:\t\t{}", result.position, result.depth);
         if self.multiply_results {
@@ -62,9 +64,24 @@ mod tests {
 
     #[test]
     fn example_1_has_the_expected_result() -> Result<()> {
-        let expected_state = State { position: 15, depth: 10 };
+        let expected_state = {
+            let mut state = State::default();
+            state.position = 15;
+            state.depth = 10;
+            state
+        };
         let input = EXAMPLE_PROGRAM;
-        let program = Day2::parse_input(input.as_bytes())?;
+        let program = Day2::parse_input(input.as_bytes(), false)?;
+        let result = program.run();
+        assert_eq!(result, expected_state);
+        Ok(())
+    }
+
+    #[test]
+    fn example_2_has_the_expected_result() -> Result<()> {
+        let expected_state = State { position: 15, depth: 60, aim: 10 };
+        let input = EXAMPLE_PROGRAM;
+        let program = Day2::parse_input(input.as_bytes(), true)?;
         let result = program.run();
         assert_eq!(result, expected_state);
         Ok(())

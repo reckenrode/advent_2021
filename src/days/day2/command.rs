@@ -11,6 +11,7 @@ use nom::{
 pub(crate) struct State {
     pub(crate) position: i32,
     pub(crate) depth: i32,
+    pub(crate) aim: i32,
 }
 
 pub(crate) struct Command(&'static str, Box<dyn Fn(&mut State)>);
@@ -22,7 +23,7 @@ enum CommandToken {
 }
 
 impl Command {
-    pub(crate) fn parse(str: &str) -> Result<Command> {
+    pub(crate) fn parse(str: &str, use_aim: bool) -> Result<Command> {
         fn distance(input: &str) -> nom::IResult<&str, u16> {
             map_res(digit1, |s: &str| s.parse())(input)
         }
@@ -34,15 +35,33 @@ impl Command {
             let (_, command) = command_parser(str.as_ref()).map_err(|e| anyhow!("{}", e))?;
             command
         };
-        let command = match command {
-            (CommandToken::Forward, number) => {
-                Command("forward", Box::new(move |s| s.position += number as i32))
+        let command = if use_aim {
+            match command {
+                (CommandToken::Forward, number) => Command(
+                    "forward",
+                    Box::new(move |s| {
+                        s.position += number as i32;
+                        s.depth += number as i32 * s.aim;
+                    }),
+                ),
+                (CommandToken::Down, number) => {
+                    Command("down", Box::new(move |s| s.aim += number as i32))
+                }
+                (CommandToken::Up, number) => {
+                    Command("up", Box::new(move |s| s.aim -= number as i32))
+                }
             }
-            (CommandToken::Down, number) => {
-                Command("down", Box::new(move |s| s.depth += number as i32))
-            }
-            (CommandToken::Up, number) => {
-                Command("up", Box::new(move |s| s.depth -= number as i32))
+        } else {
+            match command {
+                (CommandToken::Forward, number) => {
+                    Command("forward", Box::new(move |s| s.position += number as i32))
+                }
+                (CommandToken::Down, number) => {
+                    Command("down", Box::new(move |s| s.depth += number as i32))
+                }
+                (CommandToken::Up, number) => {
+                    Command("up", Box::new(move |s| s.depth -= number as i32))
+                }
             }
         };
         Ok(command)
