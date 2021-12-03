@@ -20,14 +20,15 @@ impl Day3 {
     pub(crate) fn run(self) -> Result<()> {
         let stream = File::open(self.input)?;
         let reader = BufReader::new(stream);
-        let (gamma, epsilon) = decode_diagnostic_report(reader)?;
+        let report = decode_diagnostic_report(reader)?;
+        let (gamma, epsilon) = power_consumption(&report);
         println!("Gamma: {}, Epsilon: {}", gamma, epsilon);
         println!("Power Consumption: {}", gamma * epsilon);
         Ok(())
     }
 }
 
-fn decode_diagnostic_report(report: impl BufRead) -> Result<(usize, usize)> {
+fn decode_diagnostic_report(report: impl BufRead) -> Result<Vec<bool>> {
     let report = report
         .lines()
         .collect::<Result<Vec<String>, std::io::Error>>()?;
@@ -48,11 +49,15 @@ fn decode_diagnostic_report(report: impl BufRead) -> Result<(usize, usize)> {
             },
         )
         .iter()
-        .fold((0, 0), |(gamma, epsilon), digit| {
-            let digit = *digit > one_threshold;
-            (gamma << 1 | digit as usize, epsilon << 1 | !digit as usize)
-        });
+        .map(|digit| *digit > one_threshold)
+        .collect();
     Ok(result)
+}
+
+fn power_consumption(report: &[bool]) -> (usize, usize) {
+    report.iter().fold((0, 0), |(gamma, epsilon), digit| {
+        (gamma << 1 | *digit as usize, epsilon << 1 | !*digit as usize)
+    })
 }
 
 #[cfg(test)]
@@ -67,7 +72,8 @@ mod tests {
     #[test]
     fn example_1_power_consumption_is_198() -> Result<()> {
         let expected_consumption = 198;
-        let (gamma_rate, epsilon_rate) = decode_diagnostic_report(INPUT.as_bytes())?;
+        let (gamma_rate, epsilon_rate) =
+            power_consumption(&decode_diagnostic_report(INPUT.as_bytes())?);
         assert_eq!(gamma_rate * epsilon_rate, expected_consumption);
         Ok(())
     }
