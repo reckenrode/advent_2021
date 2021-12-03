@@ -1,0 +1,22 @@
+# Editor Stuff
+.idea
+.vscode
+
+# direnv
+.direnv
+#
+# dotnet build
+bin
+!/bin
+obj
+
+# Ionide
+.fake
+.ionide
+
+# paket
+paket-files
+.paket
+
+# macOS
+.DS_Store

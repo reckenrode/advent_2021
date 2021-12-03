@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <Product>Advent2021</Product>
+    <VersionPrefix>2021.12.01</VersionPrefix>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Copyright>Copyright © 2021 Randy Eckenrode</Copyright>
+    <Authors>Randy Eckenrode</Authors>
+    <Description>My Advent of Code solutions for 2021 — written in F#.</Description>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/reckenrode/advent_2021</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+</Project>

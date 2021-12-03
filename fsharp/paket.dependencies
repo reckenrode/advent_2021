@@ -1,0 +1,15 @@
+source https://api.nuget.org/v3/index.json
+
+storage: none
+framework: net6.0
+
+nuget Expecto ~> 9.0
+nuget Expecto.FsCheck ~> 9.0
+nuget FsCheck ~> 2.16
+nuget FSharp.Control.AsyncSeq ~> 2.0
+nuget FSharp.Core ~> 6.0
+nuget FSharpPlus ~> 1.2
+nuget FSharpx.Extras ~> 3.0
+nuget Microsoft.NET.Test.Sdk ~> 17.0
+nuget System.CommandLine = 2.0.0-beta1.21308.1
+nuget YoloDev.Expecto.TestSdk ~> 0.12
