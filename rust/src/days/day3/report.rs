@@ -8,6 +8,7 @@ use std::{
 
 use anyhow::Result;
 use num_bigint::BigUint;
+use num_traits::{One, Zero};
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct Report<B: Borrow<Vec<I>>, I: Borrow<BigUint>> {
@@ -32,7 +33,7 @@ impl<B: Borrow<Vec<I>>, I: Borrow<BigUint>> Report<B, I> {
         let xs = self.data.borrow();
         let ones_threshold = xs.len() / 2 - (1 - xs.len() % 2);
         xs.iter()
-            .fold(BigUint::from(0u32), |lhs, rhs| lhs + rhs.borrow())
+            .fold(BigUint::zero(), |lhs, rhs| lhs + rhs.borrow())
             .iter_u32_digits()
             .rev()
             .fold((0usize, 0usize), |(minimum, maximum), digit| {
@@ -50,7 +51,6 @@ impl<B: Borrow<Vec<I>>, I: Borrow<BigUint>> Report<B, I> {
     }
 
     pub(crate) fn life_support_rating(&self) -> usize {
-        let one = BigUint::from(1u32);
         let num_bits = self.width;
         let (oxygen, co2) = (0..num_bits).rev().fold(
             (
@@ -58,36 +58,10 @@ impl<B: Borrow<Vec<I>>, I: Borrow<BigUint>> Report<B, I> {
                 self.data.borrow().iter().map(Borrow::borrow).collect(),
             ),
             |(oxygen, co2): (Vec<&BigUint>, Vec<&BigUint>), idx| {
-                let oxygen = if oxygen.len() > 1 {
-                    let (_, digits) = Report {
-                        data: &oxygen,
-                        width: 0,
-                        bi: PhantomData::default(),
-                    }
-                    .extrema();
-                    let digit = BigUint::from((digits >> idx) & 1);
-                    oxygen
-                        .into_iter()
-                        .filter(|i| *i >> (32 * idx) & &one == digit)
-                        .collect()
-                } else {
-                    oxygen
-                };
-                let co2 = if co2.len() > 1 {
-                    let (digits, _) = Report {
-                        data: &co2,
-                        width: 0,
-                        bi: PhantomData::default(),
-                    }
-                    .extrema();
-                    let digit = BigUint::from((digits >> idx) & 1);
-                    co2.into_iter()
-                        .filter(|i| *i >> (32 * idx) & &one == digit)
-                        .collect()
-                } else {
-                    co2
-                };
-                (oxygen, co2)
+                (
+                    filter_numbers_meeting_criteria(oxygen, idx, false),
+                    filter_numbers_meeting_criteria(co2, idx, true),
+                )
             },
         );
         if oxygen.len() == 1 && co2.len() == 1 {
@@ -95,6 +69,28 @@ impl<B: Borrow<Vec<I>>, I: Borrow<BigUint>> Report<B, I> {
         } else {
             panic!("The life support rating did not converge.  Santa is doomed! ☠️ 🎅");
         }
+    }
+}
+
+fn filter_numbers_meeting_criteria(
+    src: Vec<&BigUint>,
+    index: usize,
+    use_minimum: bool,
+) -> Vec<&BigUint> {
+    if src.len() > 1 {
+        let digits = Report {
+            data: &src,
+            width: 0,
+            bi: PhantomData::default(),
+        }
+        .extrema();
+        let digits = if use_minimum { digits.0 } else { digits.1 };
+        let digit = BigUint::from((digits >> index) & 1);
+        src.into_iter()
+            .filter(|i| *i >> (32 * index) & &BigUint::one() == digit)
+            .collect()
+    } else {
+        src
     }
 }
 
