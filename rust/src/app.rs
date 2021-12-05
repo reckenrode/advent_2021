@@ -15,6 +15,7 @@ declare_days! [
     Day1,
     Day2,
     Day3,
+    Day4,
 ];
 
 pub(crate) fn parse_options() -> App {
