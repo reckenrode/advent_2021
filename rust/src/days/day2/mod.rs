@@ -10,7 +10,7 @@ use crate::days::day2::program::Program;
 mod program;
 
 #[derive(Parser)]
-#[clap(about = "Submarine movement")]
+#[clap(about = "Dive!")]
 pub(crate) struct Day2 {
     input: PathBuf,
     #[clap(short, long)]

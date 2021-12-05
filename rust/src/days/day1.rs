@@ -12,7 +12,7 @@ use anyhow::{Error, Result};
 use clap::Parser;
 
 #[derive(Parser)]
-#[clap(about = "Submarine sonar sweep")]
+#[clap(about = "Sonar sweep")]
 pub(crate) struct Day1 {
     input: PathBuf,
 }

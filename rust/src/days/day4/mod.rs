@@ -14,7 +14,7 @@ use self::bingo::{Board, Game};
 mod bingo;
 
 #[derive(Parser)]
-#[clap(about = "Squid bingo")]
+#[clap(about = "Giant squid")]
 pub(crate) struct Day4 {
     input: PathBuf,
 }
