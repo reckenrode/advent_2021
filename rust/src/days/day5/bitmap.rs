@@ -5,32 +5,32 @@ use std::{fmt::Display, iter::repeat, str};
 use anyhow::{ensure, Result};
 
 pub(crate) struct Bitmap {
-    width: usize,
-    height: usize,
+    width: u16,
+    height: u16,
     data: Vec<u8>,
 }
 
 impl Bitmap {
-    pub(crate) fn new(width: usize, height: usize) -> Bitmap {
+    pub(crate) fn new(width: u16, height: u16) -> Bitmap {
         Bitmap {
             width,
             height,
-            data: repeat(0).take(width * height).collect(),
+            data: repeat(0).take(width as usize * height as usize).collect(),
         }
     }
 
-    pub(crate) fn width(&self) -> usize {
+    pub(crate) fn width(&self) -> u16 {
         self.width
     }
 
-    pub(crate) fn height(&self) -> usize {
+    pub(crate) fn height(&self) -> u16 {
         self.height
     }
 
-    pub(crate) fn draw(&mut self, x: usize, y: usize) -> Result<()> {
+    pub(crate) fn draw(&mut self, x: u16, y: u16) -> Result<()> {
         ensure!(x < self.width() && y < self.height());
-        let width = self.width();
-        self.data[x + y * width] += 1;
+        let width = self.width() as usize;
+        self.data[x as usize + y as usize * width] += 1;
         Ok(())
     }
 
@@ -38,8 +38,12 @@ impl Bitmap {
         self.data.iter().cloned()
     }
 
-    fn render_span(&self, begin: usize, length: usize, buf: &mut [u8]) {
-        for (idx, pixel) in self.data[begin..(begin + length)].iter().enumerate() {
+    fn render_span(&self, begin: usize, length: u16, buf: &mut [u8]) {
+        let length = length as usize;
+        for (idx, pixel) in self.data[begin..(begin + length)]
+            .iter()
+            .enumerate()
+        {
             match pixel {
                 0 => buf[idx] = '.' as u8,
                 _ => buf[idx] = pixel + ('0' as u8),
@@ -61,8 +65,8 @@ impl IntoIterator for Bitmap {
 impl Display for Bitmap {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.width() > 0 && self.height() > 0 {
-            let mut buffer: Vec<u8> = Vec::with_capacity(self.width());
-            buffer.resize(self.width(), 0);
+            let mut buffer: Vec<u8> = Vec::with_capacity(self.width() as usize);
+            buffer.resize(self.width() as usize, 0);
 
             // Only valid UTF-8 characters are written to buffer, so create it unchecked to avoid
             // having to deal with propagating the error up.
@@ -72,7 +76,8 @@ impl Display for Bitmap {
             }))?;
 
             for row in 1..self.height() {
-                self.render_span(self.width() * row, self.width(), &mut buffer);
+                let begin = row as usize * self.width() as usize;
+                self.render_span(begin, self.width(), &mut buffer);
                 f.write_fmt(format_args!("\n{}", unsafe {
                     str::from_utf8_unchecked(&buffer)
                 }))?;

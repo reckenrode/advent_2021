@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-use std::cmp::{max, min};
+use std::cmp::{max, max_by_key, min, min_by_key};
 
 use anyhow::Result;
 use nom::{
@@ -17,7 +17,7 @@ use nom::{
 use super::bitmap::Bitmap;
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct CommandList(Vec<((usize, usize), (usize, usize))>);
+pub(crate) struct CommandList(Vec<((u16, u16), (u16, u16))>);
 
 impl CommandList {
     pub(crate) fn new() -> Self {
@@ -25,10 +25,10 @@ impl CommandList {
     }
 
     pub(crate) fn parse(input: &str) -> Result<CommandList, Err<Error<&str>>> {
-        fn coordinate_part(input: &str) -> IResult<&str, usize> {
-            map_res(digit1, |src| usize::from_str_radix(src, 10))(input)
+        fn coordinate_part(input: &str) -> IResult<&str, u16> {
+            map_res(digit1, |src| u16::from_str_radix(src, 10))(input)
         }
-        fn point(input: &str) -> IResult<&str, (usize, usize)> {
+        fn point(input: &str) -> IResult<&str, (u16, u16)> {
             separated_pair(coordinate_part, tag(","), coordinate_part)(input)
         }
         let arrow = tag("->");
@@ -44,47 +44,70 @@ impl CommandList {
     pub(crate) fn apply_commands(&self, bitmap: &mut Bitmap) -> Result<()> {
         self.0
             .iter()
-            .map(|command| match command {
-                (p1 @ (x1, _), p2 @ (x2, _)) if x1 == x2 => {
-                    CommandList::draw_vertical(*p1, *p2, bitmap)
-                }
-                (p1 @ (_, y1), p2 @ (_, y2)) if y1 == y2 => {
-                    CommandList::draw_horizontal(*p1, *p2, bitmap)
-                }
-                _ => Ok(()),
-            })
+            .map(|(p1, p2)| CommandList::draw_line(*p1, *p2, bitmap))
             .collect()
     }
 
-    pub(crate) fn required_bounds(&self) -> (usize, usize) {
-        let xs = self.0.iter().map(|((x, _), _)| x).chain(self.0.iter().map(|(_, (x, _))| x));
-        let ys = self.0.iter().map(|((_, y), _)| y).chain(self.0.iter().map(|(_, (_, y))| y));
+    pub(crate) fn required_bounds(&self) -> (u16, u16) {
+        let xs = self
+            .0
+            .iter()
+            .map(|((x, _), _)| x)
+            .chain(self.0.iter().map(|(_, (x, _))| x));
+        let ys = self
+            .0
+            .iter()
+            .map(|((_, y), _)| y)
+            .chain(self.0.iter().map(|(_, (_, y))| y));
         (*xs.max().unwrap_or(&0) + 1, *ys.max().unwrap_or(&0) + 1)
     }
 
-    fn draw_horizontal(
-        (x1, y): (usize, usize),
-        (x2, _): (usize, usize),
-        bitmap: &mut Bitmap,
-    ) -> Result<()> {
-        let start = min(x1, x2);
-        let stop = max(x1, x2);
-        (start..=stop).map(|x| bitmap.draw(x, y)).collect()
-    }
-
-    fn draw_vertical(
-        (x, y1): (usize, usize),
-        (_, y2): (usize, usize),
-        bitmap: &mut Bitmap,
-    ) -> Result<()> {
-        let start = min(y1, y2);
-        let stop = max(y1, y2);
-        (start..=stop).map(|y| bitmap.draw(x, y)).collect()
+    fn draw_line((x1, y1): (u16, u16), (x2, y2): (u16, u16), bitmap: &mut Bitmap) -> Result<()> {
+        let (x1, y1) = (x1 as i32, y1 as i32);
+        let (x2, y2) = (x2 as i32, y2 as i32);
+        let ((x1, y1), (x2, y2)) = (
+            min_by_key((x1, y1), (x2, y2), |(x, _)| *x),
+            max_by_key((x1, y1), (x2, y2), |(x, _)| *x),
+        );
+        let m = (y2 - y1) as f64 / (x2 - x1) as f64;
+        if m.abs() <= 1.0 {
+            let y0 = y1 as f64 - m * x1 as f64;
+            (x1..=x2)
+                .map(|x| bitmap.draw(x as u16, (m * x as f64 + y0).round() as u16))
+                .collect()
+        } else if m.is_infinite() {
+            let (y1, y2) = (min(y1, y2), max(y1, y2));
+            (y1..=y2)
+                .map(|y| bitmap.draw(x1 as u16, y as u16))
+                .collect()
+        } else {
+            let m = 1.0 / m;
+            let x0 = x1 as f64 - m * y1 as f64;
+            (y1..=y2)
+                .map(|y| bitmap.draw((m * y as f64 + x0).round() as u16, y as u16))
+                .collect()
+        }
     }
 }
 
-impl From<Vec<((usize, usize), (usize, usize))>> for CommandList {
-    fn from(value: Vec<((usize, usize), (usize, usize))>) -> Self {
+impl FromIterator<((u16, u16), (u16, u16))> for CommandList {
+    fn from_iter<T: IntoIterator<Item = ((u16, u16), (u16, u16))>>(iter: T) -> Self {
+        Vec::from_iter(iter).into()
+    }
+}
+
+impl IntoIterator for CommandList {
+    type Item = ((u16, u16), (u16, u16));
+
+    type IntoIter = <Vec<((u16, u16), (u16, u16))> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl From<Vec<((u16, u16), (u16, u16))>> for CommandList {
+    fn from(value: Vec<((u16, u16), (u16, u16))>) -> Self {
         CommandList(value)
     }
 }
@@ -147,6 +170,72 @@ mod tests {
     fn command_list_with_a_vertical_line_draws_it_to_the_bitmap() -> Result<()> {
         let expected_result = ".1.\n.1.\n...";
         let input = CommandList::from(vec![((1, 0), (1, 1))]);
+        let mut bitmap = Bitmap::new(3, 3);
+        input.apply_commands(&mut bitmap)?;
+        let result = format!("{}", bitmap);
+        assert_eq!(result, expected_result);
+        Ok(())
+    }
+
+    #[test]
+    fn command_list_with_a_backwards_line_draws_it_to_the_bitmap() -> Result<()> {
+        let expected_result = "111\n...\n...";
+        let input = CommandList::from(vec![((2, 0), (0, 0))]);
+        let mut bitmap = Bitmap::new(3, 3);
+        input.apply_commands(&mut bitmap)?;
+        let result = format!("{}", bitmap);
+        assert_eq!(result, expected_result);
+        Ok(())
+    }
+
+    #[test]
+    fn command_list_with_a_backwards_vertical_line_draws_it_to_the_bitmap() -> Result<()> {
+        let expected_result = "...\n..1\n..1";
+        let input = CommandList::from(vec![((2, 2), (2, 1))]);
+        let mut bitmap = Bitmap::new(3, 3);
+        input.apply_commands(&mut bitmap)?;
+        let result = format!("{}", bitmap);
+        assert_eq!(result, expected_result);
+        Ok(())
+    }
+
+    #[test]
+    fn command_list_with_a_downward_45_degree_line_draws_it_to_the_bitmap() -> Result<()> {
+        let expected_result = "1..\n.1.\n..1";
+        let input = CommandList::from(vec![((0, 0), (2, 2))]);
+        let mut bitmap = Bitmap::new(3, 3);
+        input.apply_commands(&mut bitmap)?;
+        let result = format!("{}", bitmap);
+        assert_eq!(result, expected_result);
+        Ok(())
+    }
+
+    #[test]
+    fn command_list_with_a_upward_45_degree_line_draws_it_to_the_bitmap() -> Result<()> {
+        let expected_result = "..1\n.1.\n1..";
+        let input = CommandList::from(vec![((0, 2), (2, 0))]);
+        let mut bitmap = Bitmap::new(3, 3);
+        input.apply_commands(&mut bitmap)?;
+        let result = format!("{}", bitmap);
+        assert_eq!(result, expected_result);
+        Ok(())
+    }
+
+    #[test]
+    fn command_list_with_an_accute_line_draws_it_to_the_bitmap() -> Result<()> {
+        let expected_result = "1..\n.11\n...";
+        let input = CommandList::from(vec![((0, 0), (2, 1))]);
+        let mut bitmap = Bitmap::new(3, 3);
+        input.apply_commands(&mut bitmap)?;
+        let result = format!("{}", bitmap);
+        assert_eq!(result, expected_result);
+        Ok(())
+    }
+
+    #[test]
+    fn command_list_with_an_obtuse_line_draws_it_to_the_bitmap() -> Result<()> {
+        let expected_result = "1..\n.1.\n.1.";
+        let input = CommandList::from(vec![((0, 0), (1, 2))]);
         let mut bitmap = Bitmap::new(3, 3);
         input.apply_commands(&mut bitmap)?;
         let result = format!("{}", bitmap);
