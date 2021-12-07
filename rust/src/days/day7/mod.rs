@@ -12,7 +12,7 @@ use crate::util::read_input;
 use self::crabs::Positions;
 
 #[derive(Parser)]
-#[clap(about = "Lanternfish")]
+#[clap(about = "The Treachery of Whales")]
 pub(crate) struct Day7 {
     input: PathBuf,
     #[clap(short, long)]
