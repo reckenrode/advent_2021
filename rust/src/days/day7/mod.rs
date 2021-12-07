@@ -15,14 +15,16 @@ use self::crabs::Positions;
 #[clap(about = "Lanternfish")]
 pub(crate) struct Day7 {
     input: PathBuf,
+    #[clap(short, long)]
+    crab_engineering: bool,
 }
 
 impl Day7 {
     pub(crate) fn run(self) -> Result<()> {
         let input = read_input(self.input)?;
         let positions = Positions::try_from(input.as_str())?;
-        let new_position = positions.lowest_cost_target_position();
-        let fuel_cost = positions.cost_to_move(new_position);
+        let (new_position, fuel_cost) =
+            positions.lowest_cost_target_position(self.crab_engineering);
         println!("Fuel cost for move to {}: {}", new_position, fuel_cost);
         Ok(())
     }
