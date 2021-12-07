@@ -9,6 +9,8 @@ use std::{
 use anyhow::{anyhow, Result};
 use clap::Parser;
 
+use crate::util::read_input;
+
 use self::bingo::{Board, Game};
 
 mod bingo;
@@ -21,12 +23,7 @@ pub(crate) struct Day4 {
 
 impl Day4 {
     pub(crate) fn run(self) -> Result<()> {
-        let file = File::open(self.input)?;
-        let mut reader = BufReader::new(file);
-
-        let mut input = String::new();
-        reader.read_to_string(&mut input)?;
-
+        let input = read_input(self.input)?;
         let mut game = Game::parse(input.as_str())?;
         game.mark_draws();
 

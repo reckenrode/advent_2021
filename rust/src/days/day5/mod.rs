@@ -9,6 +9,8 @@ use std::{
 use anyhow::{anyhow, Result};
 use clap::Parser;
 
+use crate::util::read_input;
+
 use self::{bitmap::Bitmap, command_list::CommandList};
 
 mod bitmap;
@@ -26,12 +28,7 @@ pub(crate) struct Day5 {
 
 impl Day5 {
     pub(crate) fn run(self) -> Result<()> {
-        let file = File::open(self.input)?;
-        let mut reader = BufReader::new(file);
-
-        let mut input: String = String::new();
-        reader.read_to_string(&mut input)?;
-
+        let input = read_input(self.input)?;
         let commands = {
             let commands = CommandList::parse(input.as_str()).map_err(|err| anyhow!("{}", err))?;
             if self.ignore_diagonals {
