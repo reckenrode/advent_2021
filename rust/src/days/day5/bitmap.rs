@@ -40,10 +40,7 @@ impl Bitmap {
 
     fn render_span(&self, begin: usize, length: u16, buf: &mut [u8]) {
         let length = length as usize;
-        for (idx, pixel) in self.data[begin..(begin + length)]
-            .iter()
-            .enumerate()
-        {
+        for (idx, pixel) in self.data[begin..(begin + length)].iter().enumerate() {
             match pixel {
                 0 => buf[idx] = '.' as u8,
                 _ => buf[idx] = pixel + ('0' as u8),
