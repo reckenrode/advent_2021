@@ -3,6 +3,7 @@
 mod app;
 mod days;
 mod macros;
+mod util;
 
 fn main() {
     let app = app::parse_options();
