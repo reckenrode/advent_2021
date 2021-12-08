@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-use std::{
-    fs::File,
-    io::{BufReader, Read},
-    path::PathBuf,
-};
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
