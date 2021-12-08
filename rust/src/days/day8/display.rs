@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
+use std::{collections::HashMap, ops::BitOr};
+
 use anyhow::{anyhow, Result};
+use itertools::Itertools;
 use nom::{
     bytes::complete::{tag, take_while_m_n},
     character::complete::space1,
@@ -8,20 +11,36 @@ use nom::{
     sequence::{preceded, separated_pair, tuple},
     IResult,
 };
+use phf::phf_map;
 
-#[derive(Debug, PartialEq)]
-pub(crate) struct Display<'a> {
-    digits: [&'a [u8]; 10],
-    output: [&'a [u8]; 4],
+static SEGMENT_MAPPING: phf::Map<u8, u8> = phf_map! {
+    b'a' => 0b0000001,
+    b'b' => 0b0000010,
+    b'c' => 0b0000100,
+    b'd' => 0b0001000,
+    b'e' => 0b0010000,
+    b'f' => 0b0100000,
+    b'g' => 0b1000000,
+};
+
+fn to_repr(segments: &[u8]) -> u8 {
+    segments
+        .iter()
+        .map(|segment| SEGMENT_MAPPING[segment])
+        .fold(0, BitOr::bitor)
 }
 
-impl<'a> Display<'a> {
-    fn parser(input: &'a [u8]) -> IResult<&'a [u8], Self> {
-        fn from_vec<'a>((digits, output): (Vec<&'a [u8]>, Vec<&'a [u8]>)) -> Result<Display<'a>> {
-            Ok(Display {
-                digits: digits.as_slice().try_into()?,
-                output: output.as_slice().try_into()?,
-            })
+#[derive(Debug, PartialEq)]
+pub(crate) struct Display {
+    output: [u8; 4],
+}
+
+impl Display {
+    fn parser<'a>(input: &'a [u8]) -> IResult<&'a [u8], ([&'a [u8]; 10], [&'a [u8]; 4])> {
+        fn from_vec<'a>(
+            (digits, output): (Vec<&'a [u8]>, Vec<&'a [u8]>),
+        ) -> Result<([&'a [u8]; 10], [&'a [u8]; 4])> {
+            Ok((digits.as_slice().try_into()?, output.as_slice().try_into()?))
         }
 
         fn is_segment(digit: u8) -> bool {
@@ -59,59 +78,82 @@ impl<'a> Display<'a> {
         line(input)
     }
 
-    pub(crate) fn parse(input: &'a str) -> Result<Display<'a>> {
-        let (_, display) = Self::parser(input.as_bytes()).map_err(|err| anyhow!("{}", err))?;
-        Ok(display)
+    pub(crate) fn parse(input: &str) -> Result<Display> {
+        let (_, (digits, output)) =
+            Self::parser(input.as_bytes()).map_err(|err| anyhow!("{}", err))?;
+        Ok(Display::decode(digits, output))
     }
 
-    fn decode_digit(&self, digit: &[u8]) -> u8 {
-        match digit {
-            x if x.len() == 2 => b'1',
-            x if x.len() == 3 => b'7',
-            x if x.len() == 4 => b'4',
-            x if x.len() == 7 => b'8',
-            _ => b'?',
+    fn decode(digits: [&[u8]; 10], output: [&[u8]; 4]) -> Display {
+        let mapping: HashMap<_, _> = digits
+            .into_iter()
+            .sorted_by_key(|key| key.len())
+            .fold(
+                HashMap::<u8, u8>::with_capacity(10),
+                |mut mapping, segments| {
+                    let bit_repr = to_repr(segments);
+                    let number = match segments {
+                        x if x.len() == 2 => 1,
+                        x if x.len() == 5
+                            && ((bit_repr | 0b10000000) & !mapping[&4]) == !mapping[&4] =>
+                        {
+                            2
+                        }
+                        x if x.len() == 5 && (bit_repr & mapping[&1]) == mapping[&1] => 3,
+                        x if x.len() == 4 => 4,
+                        x if x.len() == 5
+                            && (bit_repr & (mapping[&4] ^ mapping[&7]))
+                                == (mapping[&4] ^ mapping[&7]) =>
+                        {
+                            5
+                        }
+                        x if x.len() == 6
+                            && ((bit_repr | 0b10000000) & !mapping[&7]) == !mapping[&7] =>
+                        {
+                            6
+                        }
+                        x if x.len() == 3 => 7,
+                        x if x.len() == 7 => 8,
+                        x if x.len() == 6 && (bit_repr & mapping[&4]) == mapping[&4] => 9,
+                        _ => 0,
+                    };
+                    mapping.insert(number, bit_repr);
+                    mapping
+                },
+            )
+            .into_iter()
+            .map(|(k, v)| (v, k))
+            .collect();
+        Display {
+            output: {
+                let mut mapped_output = [0; 4];
+                for (index, number) in output.into_iter().map(to_repr).enumerate() {
+                    mapped_output[index] = mapping[&number];
+                }
+                mapped_output
+            },
         }
     }
 }
 
-impl<'a> std::fmt::Display for Display<'a> {
+impl std::fmt::Display for Display {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let digits = unsafe {
-            // safety: `Display::decode` digit returns only valid UTF-8 characters, so the check
-            //         can be omitted.
-            String::from_utf8_unchecked(
-                self.output
-                    .iter()
-                    .map(|digit| self.decode_digit(digit))
-                    .collect(),
-            )
-        };
-        f.write_fmt(format_args!("{}", digits))
+        f.write_fmt(format_args!("{}", self.output.iter().join("")))
+    }
+}
+
+impl From<Display> for u32 {
+    fn from(display: Display) -> Self {
+        display
+            .output
+            .into_iter()
+            .fold(0, |acc, digit| acc * 10 + digit as u32)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn parses_the_input_into_a_display() -> Result<()> {
-        let expected_display = Display {
-            digits: [
-                b"acedgfb", b"cdfbe", b"gcdfa", b"fbcad", b"dab", b"cefabd", b"cdfgeb", b"eafb",
-                b"cagedb", b"ab",
-            ],
-            output: [b"cdfeb", b"fcadb", b"cdfeb", b"cdbaf"],
-        };
-        let input = concat!(
-            "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab ",
-            "| cdfeb fcadb cdfeb cdbaf"
-        );
-        let display = Display::parse(input)?;
-        assert_eq!(display, expected_display);
-        Ok(())
-    }
 
     #[test]
     fn display_decodes_one_digit() -> Result<()> {
@@ -126,11 +168,59 @@ mod tests {
     }
 
     #[test]
+    fn display_decodes_two_digit() -> Result<()> {
+        let expected_string = "2222";
+        let input = concat!(
+            "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab ",
+            "| gcdfa gcdfa gcdfa gcdfa"
+        );
+        let display = Display::parse(input)?;
+        assert_eq!(format!("{}", display), expected_string);
+        Ok(())
+    }
+
+    #[test]
+    fn display_decodes_three_digit() -> Result<()> {
+        let expected_string = "3333";
+        let input = concat!(
+            "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab ",
+            "| fbcad fbcad fbcad fbcad"
+        );
+        let display = Display::parse(input)?;
+        assert_eq!(format!("{}", display), expected_string);
+        Ok(())
+    }
+
+    #[test]
     fn display_decodes_four_digit() -> Result<()> {
         let expected_string = "4444";
         let input = concat!(
             "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab ",
             "| eafb eafb eafb eafb"
+        );
+        let display = Display::parse(input)?;
+        assert_eq!(format!("{}", display), expected_string);
+        Ok(())
+    }
+
+    #[test]
+    fn display_decodes_five_digit() -> Result<()> {
+        let expected_string = "5555";
+        let input = concat!(
+            "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab ",
+            "| cdfbe cdfbe cdfbe cdfbe"
+        );
+        let display = Display::parse(input)?;
+        assert_eq!(format!("{}", display), expected_string);
+        Ok(())
+    }
+
+    #[test]
+    fn display_decodes_six_digit() -> Result<()> {
+        let expected_string = "6666";
+        let input = concat!(
+            "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab ",
+            "| cdfgeb cdfgeb cdfgeb cdfgeb"
         );
         let display = Display::parse(input)?;
         assert_eq!(format!("{}", display), expected_string);
@@ -158,6 +248,42 @@ mod tests {
         );
         let display = Display::parse(input)?;
         assert_eq!(format!("{}", display), expected_string);
+        Ok(())
+    }
+
+    #[test]
+    fn display_decodes_nine_digit() -> Result<()> {
+        let expected_string = "9999";
+        let input = concat!(
+            "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab ",
+            "| cefabd cefabd cefabd cefabd"
+        );
+        let display = Display::parse(input)?;
+        assert_eq!(format!("{}", display), expected_string);
+        Ok(())
+    }
+
+    #[test]
+    fn display_decodes_zero_digit() -> Result<()> {
+        let expected_string = "0000";
+        let input = concat!(
+            "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab ",
+            "| cagedb cagedb cagedb cagedb"
+        );
+        let display = Display::parse(input)?;
+        assert_eq!(format!("{}", display), expected_string);
+        Ok(())
+    }
+
+    #[test]
+    fn it_converts_into_u32() -> Result<()> {
+        let expected_number = 9999;
+        let input = concat!(
+            "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab ",
+            "| cefabd cefabd cefabd cefabd"
+        );
+        let display = Display::parse(input)?;
+        assert_eq!(u32::from(display), expected_number);
         Ok(())
     }
 }

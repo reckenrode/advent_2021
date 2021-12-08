@@ -41,10 +41,16 @@ impl Day8 {
             .sum();
         println!("The count of digits [1, 4, 7, 8] on all the displays: {}", digit_counts);
 
+        let total: u32 = displays
+            .into_iter()
+            .map(u32::from)
+            .sum();
+        println!("The total of the displays is: {}", total);
+
         Ok(())
     }
 
-    fn parse_displays<'a>(input: &'a str) -> Result<Vec<Display<'a>>> {
+    fn parse_displays<'a>(input: &'a str) -> Result<Vec<Display>> {
         input.lines().map(Display::parse).collect()
     }
 }
