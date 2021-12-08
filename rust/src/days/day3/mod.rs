@@ -10,7 +10,7 @@ use crate::days::day3::report::{Report, ReportExt};
 mod report;
 
 #[derive(Parser)]
-#[clap(about = "Binary diagnostic")]
+#[clap(about = "Binary Diagnostic")]
 pub(crate) struct Day3 {
     input: PathBuf,
 }

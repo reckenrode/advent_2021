@@ -13,7 +13,7 @@ mod bitmap;
 mod command_list;
 
 #[derive(Parser)]
-#[clap(about = "Hydrothermal venture")]
+#[clap(about = "Hydrothermal Venture")]
 pub(crate) struct Day5 {
     input: PathBuf,
     #[clap(short, long)]

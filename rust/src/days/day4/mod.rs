@@ -12,7 +12,7 @@ use self::bingo::{Board, Game};
 mod bingo;
 
 #[derive(Parser)]
-#[clap(about = "Giant squid")]
+#[clap(about = "Giant Squid")]
 pub(crate) struct Day4 {
     input: PathBuf,
 }
