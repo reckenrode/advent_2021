@@ -2,26 +2,19 @@
 
 use clap::Parser;
 
-use crate::declare_days;
-
 #[derive(Parser)]
 #[clap(about, author, version)]
 pub(crate) struct App {
     #[clap(subcommand)]
-    cmd: Command,
+    cmd: crate::days::Command,
 }
-
-declare_days! [
-    Day1,
-    Day2,
-    Day3,
-    Day4,
-    Day5,
-    Day6,
-    Day7,
-    Day8,
-];
 
 pub(crate) fn parse_options() -> App {
     App::parse()
+}
+
+impl App {
+    pub(crate) fn run(self) -> anyhow::Result<()> {
+        self.cmd.run()
+    }
 }

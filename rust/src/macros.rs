@@ -6,15 +6,20 @@ macro_rules! declare_days {
         declare_days! $x
     };
     ( $( $x:ident, )* ) => {
-        #[derive(clap::Subcommand)]
-        enum Command {
+        paste::paste! {
             $(
-                $x(crate::days::$x),
+                mod [<$x:lower>];
             )*
+            #[derive(clap::Subcommand)]
+            pub(crate) enum Command {
+                $(
+                    $x(crate::days::[<$x:lower>]::$x),
+                )*
+            }
         }
-        impl App {
+        impl Command {
             pub(crate) fn run(self) -> anyhow::Result<()> {
-                match self.cmd {
+                match self {
                     $(
                         Command::$x(day) => day.run(),
                     )*
