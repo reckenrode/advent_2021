@@ -11,4 +11,5 @@ declare_days! [
     Day6,
     Day7,
     Day8,
+    Day9,
 ];
