@@ -134,8 +134,7 @@ let run (options: Options) (console: IConsole) =
             let basins =
                 lowestPoints
                 |> Seq.map (fun pt -> HeightMap.mapBasin (pt.row, pt.column) heightmap |> Set.count)
-                |> Seq.sort
-                |> Seq.rev
+                |> Seq.sortDescending
                 |> Seq.take 3
                 |> Seq.reduce (*)
 
