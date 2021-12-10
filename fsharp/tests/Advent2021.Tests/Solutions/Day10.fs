@@ -10,45 +10,45 @@ open Advent2021.Solutions.Day10
 let tests = testList "Day10.Syntax" [
     testList "chunks" [
         test "it recognizes paren chunks" {
-            let expected = Ok ()
+            let expected = Ok "()"
             let result = Syntax.recognize "()"
             Expect.equal result expected "the chunk was recognized"
         }
 
         test "it recognizes bracket chunks" {
-            let expected = Ok ()
+            let expected = Ok "[]"
             let result = Syntax.recognize "[]"
             Expect.equal result expected "the chunk was recognized"
         }
 
         test "it recognizes curly bracket chunks" {
-            let expected = Ok ()
+            let expected = Ok "{}"
             let result = Syntax.recognize "{}"
             Expect.equal result expected "the chunk was recognized"
         }
 
         test "it recognizes angle bracket chunks" {
-            let expected = Ok ()
+            let expected = Ok "<>"
             let result = Syntax.recognize "<>"
             Expect.equal result expected "the chunk was recognized"
         }
 
         test "it recognizes nested chunks" {
-            let expected = Ok ()
+            let expected = Ok "(())"
             let result = Syntax.recognize "(())"
             Expect.equal result expected "the chunk was recognized"
         }
 
         test "it recognizes complex chunks" {
-            let expected = Ok ()
+            let expected = Ok "[<>({}){}[([])<>]]"
             let result = Syntax.recognize "[<>({}){}[([])<>]]"
             Expect.equal result expected "the chunk was recognized"
         }
 
         test "it autocompletes incomplete lines" {
-            let expected = Ok ()
+            let expected = Ok "[({(<(())[]>[[{[]{<()<>>}}]])})]"
             let result = Syntax.recognize "[({(<(())[]>[[{[]{<()<>>"
-            Expect.equal result expected "the line was ignored"
+            Expect.equal result expected "the line was completed"
         }
     ]
     testList "invalid chunks" [

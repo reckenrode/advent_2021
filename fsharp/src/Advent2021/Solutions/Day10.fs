@@ -5,7 +5,7 @@ module Advent2021.Solutions.Day10
 module Syntax =
     open FParsec
 
-    let recognize str =
+    let rec recognize str =
         let terminal lhs rhs = pipe2 (pchar lhs) (pchar rhs) (fun _ _ -> ())
         let (chunks, chunksRef) = createParserForwardedToRef<unit, unit> ()
         let chunk lhs rhs =
@@ -20,12 +20,12 @@ module Syntax =
         |>> (fun _ -> ())
         let chunks = chunks .>> eof
         match run chunks str with
-        | Success _ -> Result.Ok ()
-        | Failure (msg, error, _) ->
+        | Success _ -> Result.Ok str
+        | Failure (_, error, _) ->
             let position = error.Position
-            if position.Column > String.length str
-            then Result.Ok ()
-            else Result.Error str[int position.Column - 1]
+            match error.Messages.Head with
+            | ExpectedString s when position.Column > String.length str -> recognize $"{str}{s}"
+            | _ -> Result.Error str[int position.Column - 1]
 
 open System.CommandLine
 open System.IO
@@ -44,11 +44,17 @@ let corruptedScores = Map.ofList [
 ]
 
 let incompleteScores = Map.ofList [
-    (')', 1)
-    (']', 2)
-    ('}', 3)
-    ('>', 4)
+    (')', 1L)
+    (']', 2L)
+    ('}', 3L)
+    ('>', 4L)
 ]
+
+let calculateIncompleteScore =
+    Seq.fold (fun total ch ->
+        let score = Map.tryFind ch incompleteScores |> Option.defaultValue 0
+        total * 5L + score
+    ) 0L
 
 let run (options: Options) (console: IConsole) =
     task {
@@ -56,18 +62,30 @@ let run (options: Options) (console: IConsole) =
         use reader = new StreamReader (file)
         let! contents = reader.ReadToEndAsync ()
 
-        let lines = String.split [ "\n" ] contents
+        let lines = String.split [ "\n" ] contents |> Seq.map (fun s -> s, Syntax.recognize s)
 
         let syntaxErrorScore =
             lines
-            |> Seq.map Syntax.recognize
             |> Seq.choose (function
-                | Ok _ -> None
-                | Error error -> Map.tryFind error corruptedScores
+                | _, Ok _ -> None
+                | _, Error error -> Map.tryFind error corruptedScores
             )
             |> Seq.sum
 
         printfn $"Total syntax error score: {syntaxErrorScore}"
+
+        let autocompletionScores =
+            lines
+            |> Seq.choose (function
+                | str, Ok autoStr when (String.length str) <> (String.length autoStr) ->
+                    Some (calculateIncompleteScore autoStr[(String.length str)..])
+                | _ -> None)
+            |> Seq.sort
+            |> Array.ofSeq
+
+        let winningScore = autocompletionScores[Array.length autocompletionScores / 2]
+
+        printfn $"Winning autocompletion score: {winningScore}"
 
         return 0
     }
