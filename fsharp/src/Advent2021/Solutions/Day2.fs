@@ -96,7 +96,7 @@ let run (options: Options) (console: IConsole) =
     }
 
 let command =
-    let command = Command.create "day2" "Submarine navigation" run
+    let command = Command.create "day2" "Dive!" run
     command.AddOption <| Option<bool> (
         aliases = [| "-m"; "--multiply-result" |],
         description = "multiply the depth and distance together"

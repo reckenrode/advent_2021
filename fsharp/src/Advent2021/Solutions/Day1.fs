@@ -52,4 +52,4 @@ let run (options: Options) (console: IConsole) =
         return 0
     }
 
-let command = Command.create "day1" "Submarine sonar sweep" run
+let command = Command.create "day1" "Sonar Sweep" run
