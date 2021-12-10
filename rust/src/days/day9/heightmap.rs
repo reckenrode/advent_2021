@@ -127,8 +127,8 @@ impl Heightmap {
         })
     }
 
-    fn map_basin_impl(&self, pt: &Point, seen: &mut HashSet<Point>) {
-        self.neighbors(pt).for_each(|other_pt| {
+    fn map_basin_impl(&self, pt: &Point, seen: HashSet<Point>) -> HashSet<Point> {
+        self.neighbors(pt).fold(seen, |mut seen, other_pt| {
             if !seen.contains(&other_pt) && other_pt.value != 9 && other_pt.value > pt.value {
                 seen.insert(Point {
                     row: other_pt.row,
@@ -136,27 +136,27 @@ impl Heightmap {
                     value: other_pt.value,
                 });
                 self.map_basin_impl(&other_pt, seen)
+            } else {
+                seen
             }
         })
     }
 
     pub(crate) fn map_basin(&self, row: usize, column: usize) -> HashSet<Point> {
-        let mut result: HashSet<Point> = [Point {
-            row,
-            column,
-            value: self.grid[row][column],
-        }]
-        .into_iter()
-        .collect();
         self.map_basin_impl(
             &Point {
                 row,
                 column,
                 value: self.grid[row][column],
             },
-            &mut result,
-        );
-        result
+            [Point {
+                row,
+                column,
+                value: self.grid[row][column],
+            }]
+            .into_iter()
+            .collect(),
+        )
     }
 }
 
@@ -210,78 +210,24 @@ mod tests {
 
     #[test]
     fn map_basin_maps_out_the_basin_for_the_low_point() -> Result<()> {
-        let expected_basin = [
-            Point {
-                row: 1,
-                column: 2,
-                value: 8,
-            },
-            Point {
-                row: 1,
-                column: 3,
-                value: 7,
-            },
-            Point {
-                row: 1,
-                column: 4,
-                value: 8,
-            },
-            Point {
-                row: 2,
-                column: 1,
-                value: 8,
-            },
-            Point {
-                row: 2,
-                column: 2,
-                value: 5,
-            },
-            Point {
-                row: 2,
-                column: 3,
-                value: 6,
-            },
-            Point {
-                row: 2,
-                column: 4,
-                value: 7,
-            },
-            Point {
-                row: 2,
-                column: 5,
-                value: 8,
-            },
-            Point {
-                row: 3,
-                column: 0,
-                value: 8,
-            },
-            Point {
-                row: 3,
-                column: 1,
-                value: 7,
-            },
-            Point {
-                row: 3,
-                column: 2,
-                value: 6,
-            },
-            Point {
-                row: 3,
-                column: 3,
-                value: 7,
-            },
-            Point {
-                row: 3,
-                column: 4,
-                value: 8,
-            },
-            Point {
-                row: 4,
-                column: 1,
-                value: 8,
-            },
-        ];
+        let expected_basin: HashSet<Point> = [
+            Point { row: 1, column: 2, value: 8, },
+            Point { row: 1, column: 3, value: 7, },
+            Point { row: 1, column: 4, value: 8, },
+            Point { row: 2, column: 1, value: 8, },
+            Point { row: 2, column: 2, value: 5, },
+            Point { row: 2, column: 3, value: 6, },
+            Point { row: 2, column: 4, value: 7, },
+            Point { row: 2, column: 5, value: 8, },
+            Point { row: 3, column: 0, value: 8, },
+            Point { row: 3, column: 1, value: 7, },
+            Point { row: 3, column: 2, value: 6, },
+            Point { row: 3, column: 3, value: 7, },
+            Point { row: 3, column: 4, value: 8, },
+            Point { row: 4, column: 1, value: 8, },
+        ]
+        .into_iter()
+        .collect();
         let heightmap = Heightmap::parse(concat!(
             "2199943210\n",
             "3987894921\n",
@@ -289,8 +235,7 @@ mod tests {
             "8767896789\n",
             "9899965678"
         ))?;
-        let mut basin: Vec<_> = heightmap.map_basin(2, 2).into_iter().collect();
-        basin.sort_by_key(|pt| pt.row << 16 | pt.column);
+        let basin = heightmap.map_basin(2, 2);
         assert_eq!(basin, expected_basin);
         Ok(())
     }
