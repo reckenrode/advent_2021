@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-module Advent2021.Tests.Day2
+module Advent2021.Tests.Solutions.Day2
 
 open System.IO
 
