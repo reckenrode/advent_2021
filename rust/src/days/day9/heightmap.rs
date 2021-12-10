@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
+use std::collections::HashSet;
+
 use anyhow::{anyhow, Result};
 use nom::{
     branch::alt,
@@ -22,6 +24,13 @@ pub(crate) struct Neighbors {
     pub(crate) bottom: Option<u32>,
     pub(crate) left: Option<u32>,
     pub(crate) right: Option<u32>,
+}
+
+#[derive(Debug, Hash, Eq, PartialEq)]
+pub(crate) struct Point {
+    pub(crate) row: usize,
+    pub(crate) column: usize,
+    pub(crate) value: u32,
 }
 
 impl Heightmap {
@@ -52,7 +61,7 @@ impl Heightmap {
     pub(crate) fn filter<'a, 'b>(
         &'a self,
         f: impl Fn(u32, Neighbors) -> bool + 'b,
-    ) -> impl Iterator<Item = (usize, usize, &'a u32)> + 'a
+    ) -> impl Iterator<Item = Point> + 'a
     where
         'b: 'a,
     {
@@ -60,14 +69,15 @@ impl Heightmap {
             .iter()
             .enumerate()
             .flat_map(|(row, values)| {
-                values
-                    .iter()
-                    .enumerate()
-                    .map(move |(column, value)| (row, column, value))
+                values.iter().enumerate().map(move |(column, value)| Point {
+                    row,
+                    column,
+                    value: *value,
+                })
             })
-            .filter_map(move |result @ (row, column, value)| {
+            .filter_map(move |result @ Point { row, column, value }| {
                 f(
-                    *value,
+                    value,
                     Neighbors {
                         top: if row == 0 {
                             None
@@ -94,6 +104,60 @@ impl Heightmap {
                 .then(|| result)
             })
     }
+
+    fn neighbors<'a>(&'a self, pt: &Point) -> impl Iterator<Item = Point> + 'a {
+        [
+            (pt.row.wrapping_sub(1), pt.column),
+            (pt.row + 1, pt.column),
+            (pt.row, pt.column.wrapping_sub(1)),
+            (pt.row, pt.column + 1),
+        ]
+        .into_iter()
+        .filter_map(|(row, column)| {
+            if row != usize::MAX && row < self.height && column != usize::MAX && column < self.width
+            {
+                Some(Point {
+                    row,
+                    column,
+                    value: self.grid[row][column],
+                })
+            } else {
+                None
+            }
+        })
+    }
+
+    fn map_basin_impl(&self, pt: &Point, seen: &mut HashSet<Point>) {
+        self.neighbors(pt).for_each(|other_pt| {
+            if !seen.contains(&other_pt) && other_pt.value != 9 && other_pt.value > pt.value {
+                seen.insert(Point {
+                    row: other_pt.row,
+                    column: other_pt.column,
+                    value: other_pt.value,
+                });
+                self.map_basin_impl(&other_pt, seen)
+            }
+        })
+    }
+
+    pub(crate) fn map_basin(&self, row: usize, column: usize) -> HashSet<Point> {
+        let mut result: HashSet<Point> = [Point {
+            row,
+            column,
+            value: self.grid[row][column],
+        }]
+        .into_iter()
+        .collect();
+        self.map_basin_impl(
+            &Point {
+                row,
+                column,
+                value: self.grid[row][column],
+            },
+            &mut result,
+        );
+        result
+    }
 }
 
 #[cfg(test)]
@@ -110,7 +174,11 @@ mod tests {
 
     #[test]
     fn filter_applies_the_filter() -> Result<()> {
-        let expected_output = vec![(0usize, 0usize, &1u32)];
+        let expected_output = vec![Point {
+            row: 0,
+            column: 0,
+            value: 1,
+        }];
         let heightmap = Heightmap::parse("1\n2")?;
         let output = heightmap.filter(|value, _| value == 1);
         assert_eq!(output.collect::<Vec<_>>(), expected_output);
@@ -119,7 +187,13 @@ mod tests {
 
     #[test]
     fn filter_provides_neighbors() -> Result<()> {
-        let expected_output = vec![(1usize, 1usize, &1u32)];
+        let expected_output = vec![
+            (Point {
+                row: 1,
+                column: 1,
+                value: 1,
+            }),
+        ];
         let heightmap = Heightmap::parse("111\n111\n111")?;
         let output = heightmap.filter(|value, neighbors| match neighbors {
             Neighbors {
@@ -131,6 +205,93 @@ mod tests {
             _ => false,
         });
         assert_eq!(output.collect::<Vec<_>>(), expected_output);
+        Ok(())
+    }
+
+    #[test]
+    fn map_basin_maps_out_the_basin_for_the_low_point() -> Result<()> {
+        let expected_basin = [
+            Point {
+                row: 1,
+                column: 2,
+                value: 8,
+            },
+            Point {
+                row: 1,
+                column: 3,
+                value: 7,
+            },
+            Point {
+                row: 1,
+                column: 4,
+                value: 8,
+            },
+            Point {
+                row: 2,
+                column: 1,
+                value: 8,
+            },
+            Point {
+                row: 2,
+                column: 2,
+                value: 5,
+            },
+            Point {
+                row: 2,
+                column: 3,
+                value: 6,
+            },
+            Point {
+                row: 2,
+                column: 4,
+                value: 7,
+            },
+            Point {
+                row: 2,
+                column: 5,
+                value: 8,
+            },
+            Point {
+                row: 3,
+                column: 0,
+                value: 8,
+            },
+            Point {
+                row: 3,
+                column: 1,
+                value: 7,
+            },
+            Point {
+                row: 3,
+                column: 2,
+                value: 6,
+            },
+            Point {
+                row: 3,
+                column: 3,
+                value: 7,
+            },
+            Point {
+                row: 3,
+                column: 4,
+                value: 8,
+            },
+            Point {
+                row: 4,
+                column: 1,
+                value: 8,
+            },
+        ];
+        let heightmap = Heightmap::parse(concat!(
+            "2199943210\n",
+            "3987894921\n",
+            "9856789892\n",
+            "8767896789\n",
+            "9899965678"
+        ))?;
+        let mut basin: Vec<_> = heightmap.map_basin(2, 2).into_iter().collect();
+        basin.sort_by_key(|pt| pt.row << 16 | pt.column);
+        assert_eq!(basin, expected_basin);
         Ok(())
     }
 }

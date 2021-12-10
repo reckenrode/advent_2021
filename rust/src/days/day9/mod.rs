@@ -6,6 +6,7 @@ mod heightmap;
 
 use anyhow::Result;
 use clap::Parser;
+use itertools::Itertools;
 
 use crate::util::read_input;
 
@@ -35,8 +36,17 @@ impl Day9 {
             })
             .collect();
 
-        let risk_levels = low_points.iter().map(|(_, _, x)| *x + 1);
+        let risk_levels = low_points.iter().map(|pt| pt.value + 1);
         println!("The sum of the risk levels: {}", risk_levels.sum::<u32>());
+
+        let basins: usize = low_points
+            .iter()
+            .map(|pt| heightmap.map_basin(pt.row, pt.column).len())
+            .sorted_unstable()
+            .rev()
+            .take(3)
+            .product();
+        println!("The product of the three largest basins: {}", basins);
 
         Ok(())
     }
