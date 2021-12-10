@@ -75,33 +75,32 @@ impl Heightmap {
                     value: *value,
                 })
             })
-            .filter_map(move |result @ Point { row, column, value }| {
+            .filter(move |Point { row, column, value }| {
                 f(
-                    value,
+                    *value,
                     Neighbors {
-                        top: if row == 0 {
+                        top: if *row == 0 {
                             None
                         } else {
-                            Some(self.grid[row - 1][column])
+                            Some(self.grid[*row - 1][*column])
                         },
-                        bottom: if row == self.height - 1 {
+                        bottom: if *row == self.height - 1 {
                             None
                         } else {
-                            Some(self.grid[row + 1][column])
+                            Some(self.grid[*row + 1][*column])
                         },
-                        left: if column == 0 {
+                        left: if *column == 0 {
                             None
                         } else {
-                            Some(self.grid[row][column - 1])
+                            Some(self.grid[*row][*column - 1])
                         },
-                        right: if column == self.width - 1 {
+                        right: if *column == self.width - 1 {
                             None
                         } else {
-                            Some(self.grid[row][column + 1])
+                            Some(self.grid[*row][*column + 1])
                         },
                     },
                 )
-                .then(|| result)
             })
     }
 
