@@ -83,6 +83,7 @@ module OctopusField =
         step' field Set.empty Set.empty
 
 open System.CommandLine
+open System.CommandLine.Rendering
 open System.IO
 
 open FSharpPlus
@@ -91,9 +92,20 @@ type Options = {
     Input: FileInfo
     Steps: uint32
     Print: bool
+    Bold: bool
 }
 
 let run (options: Options) (console: IConsole) =
+    let renderField field =
+        if options.Print
+        then
+            let output =
+                sprintf $"{field}\n"
+                |> if options.Bold
+                    then String.replace "0" $"{Ansi.Text.BoldOn}0{Ansi.Text.BoldOff}"
+                    else id
+            console.Out.Write output
+
     task {
         match OctopusField.parse options.Input >>= OctopusField.ofList with
         | Error message ->
@@ -111,8 +123,7 @@ let run (options: Options) (console: IConsole) =
             let flashes, finalField = runSteps field options.Steps
 
             console.Out.Write($"Number of flashes in {options.Steps} steps: {flashes}\n")
-            if options.Print
-            then console.Out.Write($"{finalField}\n")
+            renderField finalField
 
             let findFirstFlash field =
                 let rec loop field n =
@@ -122,9 +133,8 @@ let run (options: Options) (console: IConsole) =
                 loop field 0
             let steps, finalField = findFirstFlash field
 
-            console.Out.Write($"It took {steps} steps to find the first step with all flashes")
-            if options.Print
-            then console.Out.Write($"{finalField}\n")
+            console.Out.Write($"It took {steps} steps to find the first step with all flashes\n")
+            renderField finalField
 
             return 0
     }
@@ -139,5 +149,9 @@ let command =
     command.AddOption <| Option<bool> (
         aliases = [| "-p"; "--print" |],
         description = "print the final field"
+    )
+    command.AddOption <| Option<bool> (
+        aliases = [| "-b"; "--bold" |],
+        description = "bold the flashes"
     )
     command

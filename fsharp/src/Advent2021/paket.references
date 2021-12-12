@@ -3,3 +3,4 @@ FSharp.Control.AsyncSeq
 FSharpPlus
 FSharpx.Extras
 System.CommandLine
+System.CommandLine.Rendering
