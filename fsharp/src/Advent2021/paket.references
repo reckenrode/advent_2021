@@ -1,6 +1,7 @@
 FParsec
 FSharp.Control.AsyncSeq
 FSharpPlus
+FSharpPlus.TypeLevel
 FSharpx.Extras
 System.CommandLine
 System.CommandLine.Rendering
