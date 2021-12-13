@@ -144,4 +144,20 @@ let tests = testList "Day13" [
             Expect.equal instructions expectedInstructions "the instructions parsed correctly"
         }
     ]
+
+    testList "rendering" [
+        test "it renders a point as a hash" {
+            let expectedOutput = "#"
+            let input = Points.ofList [ { x = 0; y = 0 }]
+            let output = Points.render input
+            Expect.equal output expectedOutput "the outputs match"
+        }
+
+        test "it renders empty points as a dot" {
+            let expectedOutput = ".#"
+            let input = Points.ofList [ { x = 1; y = 0 }]
+            let output = Points.render input
+            Expect.equal output expectedOutput "the outputs match"
+        }
+    ]
 ]

@@ -4,6 +4,9 @@ module Advent2021.Solutions.Day13
 
 type Point = { x: int; y: int }
 
+module Point =
+    let origin = { x = 0; y = 0 }
+
 type Points = Points of Set<Point>
 
 module Points =
@@ -32,6 +35,24 @@ module Points =
 
     let reflectVertical x =
         reflect (matrix ((-1, 0, 2 * x), (0, 1, 0), (0, 0, 1))) (fun pt -> pt.x <= x)
+
+    let render (Points pts) =
+        let bounds =
+            pts
+            |> Set.fold
+                (fun bound ({ x = x; y = y }) -> { x = max bound.x x; y = max bound.y y })
+                Point.origin
+
+        seq { 0 .. bounds.y }
+        |> Seq.map (fun y ->
+            seq { 0 .. bounds.x }
+            |> Seq.map (fun x ->
+                if Set.contains { x = x; y = y } pts then
+                    "#"
+                else
+                    ".")
+            |> String.concat "")
+        |> String.concat "\n"
 
 module Instructions =
     open type System.Convert
@@ -111,11 +132,13 @@ let run (options: Options) (console: IConsole) =
                     flips
                     |> foldi
                         (fun points n flip ->
-                            console.Out.Write $"Points after flip #{n}: {Points.count points}\n"
+                            if n = 1 then
+                                let message = $"Points after first flip: {Points.count points}\n"
+                                console.Out.Write message
                             Instructions.Flip.apply points flip)
                         points
 
-                console.Out.Write $"Points after the final flip: {Points.count points}\n"
+                console.Out.Write $"Final grid\n==========\n{Points.render points}\n"
 
                 return 0
             }
