@@ -59,9 +59,9 @@ module Graph =
                 )
                 |> Set.unionMany
 
-        let rec smallCaveRevisitor predecessors visitedSmallNodes child =
+        let smallCaveVisitor _ _ _ = Set.empty
+        let smallCaveRevisitor predecessors visitedSmallNodes child =
             paths' smallCaveVisitor child (addNode child predecessors) visitedSmallNodes
-        and smallCaveVisitor _ _ _ = Set.empty
 
         let visitor = if revisit then smallCaveRevisitor else smallCaveVisitor
 
