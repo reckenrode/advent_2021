@@ -39,27 +39,34 @@ module Graph =
         | Success (graph, _, _) -> Result.Ok (ofTuples graph |> Graph)
         | Failure (error, _, _) -> Result.Error error
 
-    let paths (Graph graph) =
+    let paths (Graph graph) revisit =
         let addNode node = Set.map (fun predecessor -> $"{predecessor},{node}")
         let isSmallNode = String.forall System.Char.IsLower
-        let hasEnd = String.endsWith "end"
-        let rec paths' start predecessors visitedSmallNodes =
-            let children = Set.filter (flip Set.contains visitedSmallNodes >> not) graph[start]
-            if start = "end" || Set.isEmpty children
+        let updateSmallNodes child set = if isSmallNode child then Set.add child set else set
+
+        let rec paths' f start predecessors visitedSmallNodes =
+            if start = "end"
             then predecessors
             else
-                children
+                graph[start]
+                |> Set.filter ((<>) "start")
                 |> Set.map (fun child ->
-                    let visitedSmallNodes =
-                        if isSmallNode child
-                        then Set.add child visitedSmallNodes
-                        else visitedSmallNodes
-                    paths' child (addNode child predecessors) visitedSmallNodes
+                    if Set.contains child visitedSmallNodes
+                    then f predecessors visitedSmallNodes child
+                    else
+                        let visitedSmallNodes = updateSmallNodes child visitedSmallNodes
+                        paths' f child (addNode child predecessors) visitedSmallNodes
                 )
                 |> Set.unionMany
-        let initialSets = Set.ofList ["start"]
-        paths' "start" initialSets initialSets
-        |> Set.filter hasEnd
+
+        let rec smallCaveRevisitor predecessors visitedSmallNodes child =
+            paths' smallCaveVisitor child (addNode child predecessors) visitedSmallNodes
+        and smallCaveVisitor _ _ _ = Set.empty
+
+        let visitor = if revisit then smallCaveRevisitor else smallCaveVisitor
+
+        paths' visitor "start" (Set.ofList ["start"]) Set.empty
+        |> Set.filter (String.endsWith "end")
 
 open System.CommandLine
 open System.IO
@@ -69,6 +76,7 @@ open FSharpPlus
 type Options = {
     input: FileInfo
     print: bool
+    allowRevisit: bool
 }
 
 let run (options: Options) (console: IConsole) =
@@ -82,8 +90,8 @@ let run (options: Options) (console: IConsole) =
             use file = options.input.OpenRead ()
             let! graph = Graph.parse file.Name file
 
-            let paths = Graph.paths graph
-            console.Out.Write $"There are {Set.count paths} paths visiting small caves only once\n"
+            let paths = Graph.paths graph options.allowRevisit
+            console.Out.Write $"There are {Set.count paths} paths\n"
             if options.print then Seq.iter (fun path -> console.Out.Write $"{path}\n") paths
 
             return 0
@@ -96,5 +104,9 @@ let command =
     command.AddOption <| Option<bool> (
         aliases = [| "-p"; "--print" |],
         description = "print the paths"
+    )
+    command.AddOption <| Option<bool> (
+        aliases = [| "-a"; "--allow-revisit" |],
+        description = "allow a small cave to be revisited once"
     )
     command

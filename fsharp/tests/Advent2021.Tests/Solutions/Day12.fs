@@ -17,7 +17,7 @@ let tests = testList "Day12.Graph" [
             "start", Set.ofList ["end"]
             "end", Set.ofList ["start"]
         ]
-        let paths = Graph.paths input
+        let paths = Graph.paths input false
         Expect.equal paths expectedPaths "the paths match"
     }
 
@@ -28,7 +28,7 @@ let tests = testList "Day12.Graph" [
             "A", Set.ofList ["start"]
             "end", Set.ofList ["A"]
         ]
-        let paths = Graph.paths input
+        let paths = Graph.paths input false
         Expect.equal paths expectedPaths "the paths match"
     }
 
@@ -40,7 +40,7 @@ let tests = testList "Day12.Graph" [
                 "A", Set.ofList ["end"; "start"]
                 "end", Set.ofList ["A"]
             ]
-            let paths = Graph.paths input
+            let paths = Graph.paths input false
             Expect.equal paths expectedPaths "the paths match"
         }
 
@@ -55,7 +55,7 @@ let tests = testList "Day12.Graph" [
                 "B", Set.ofList ["end"; "start"]
                 "end", Set.ofList ["A"; "B"]
             ]
-            let paths = Graph.paths input
+            let paths = Graph.paths input false
             Expect.equal paths expectedPaths "the paths match"
         }
 
@@ -69,7 +69,7 @@ let tests = testList "Day12.Graph" [
                 "b", Set.ofList ["b"; "end"]
                 "end", Set.ofList ["b"]
             ]
-            let paths = Graph.paths input
+            let paths = Graph.paths input false
             Expect.equal paths expectedPaths "the paths match"
         }
 
@@ -87,7 +87,7 @@ let tests = testList "Day12.Graph" [
                 "C", Set.ofList ["b"; "start"; "end"]
                 "end", Set.ofList ["C"]
             ]
-            let paths = Graph.paths input
+            let paths = Graph.paths input false
             Expect.equal paths expectedPaths "the paths match"
         }
     ]
@@ -100,7 +100,7 @@ let tests = testList "Day12.Graph" [
                 "a", Set.ofList ["end"; "start"]
                 "end", Set.ofList ["a"]
             ]
-            let paths = Graph.paths input
+            let paths = Graph.paths input false
             Expect.equal paths expectedPaths "the paths match"
         }
 
@@ -115,7 +115,7 @@ let tests = testList "Day12.Graph" [
                 "b", Set.ofList ["end"; "start"]
                 "end", Set.ofList ["a"; "b"]
             ]
-            let paths = Graph.paths input
+            let paths = Graph.paths input false
             Expect.equal paths expectedPaths "the paths match"
         }
 
@@ -129,7 +129,7 @@ let tests = testList "Day12.Graph" [
                 "b", Set.ofList ["b"; "end"]
                 "end", Set.ofList ["b"]
             ]
-            let paths = Graph.paths input
+            let paths = Graph.paths input false
             Expect.equal paths expectedPaths "the paths match"
         }
 
@@ -147,7 +147,7 @@ let tests = testList "Day12.Graph" [
                 "c", Set.ofList ["a"; "b"; "end"]
                 "end", Set.ofList ["c"]
             ]
-            let paths = Graph.paths input
+            let paths = Graph.paths input false
             Expect.equal paths expectedPaths "the paths match"
         }
 
@@ -165,7 +165,7 @@ let tests = testList "Day12.Graph" [
                 "c", Set.ofList ["a"; "b"; "end"]
                 "end", Set.ofList ["c"]
             ]
-            let paths = Graph.paths input
+            let paths = Graph.paths input false
             Expect.equal paths expectedPaths "the paths match"
         }
 
@@ -180,7 +180,39 @@ let tests = testList "Day12.Graph" [
                 "c", Set.ofList ["b"]
                 "end", Set.ofList ["b"]
             ]
-            let paths = Graph.paths input
+            let paths = Graph.paths input false
+            Expect.equal paths expectedPaths "the paths match"
+        }
+    ]
+
+    testList "revisiting one small cave" [
+        test "it finds the path with one node" {
+            let expectedPaths = Set.ofList ["start,a,end"]
+            let input = Graph.ofList [
+                "start", Set.ofList ["a"]
+                "a", Set.ofList ["end"; "start"]
+                "end", Set.ofList ["a"]
+            ]
+            let paths = Graph.paths input true
+            Expect.equal paths expectedPaths "the paths match"
+        }
+
+        test "it finds the paths with multiple nodes" {
+            let expectedPaths = Set.ofList [
+                "start,a,end"
+                "start,b,end"
+                "start,a,b,end"
+                "start,b,a,end"
+                "start,a,b,a,end"
+                "start,b,a,b,end"
+            ]
+            let input = Graph.ofList [
+                "start", Set.ofList ["a"; "b"]
+                "a", Set.ofList ["b"; "end"; "start"]
+                "b", Set.ofList ["a"; "end"; "start"]
+                "end", Set.ofList ["a"; "b"]
+            ]
+            let paths = Graph.paths input true
             Expect.equal paths expectedPaths "the paths match"
         }
     ]
