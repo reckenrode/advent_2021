@@ -41,6 +41,13 @@ module Support =
         commands |> Array.iter root.AddCommand
         root
 
+    let handleFailure (console: IConsole) =
+        function
+        | Ok code -> code
+        | Error message ->
+            console.Error.Write $"Error parsing file: {message}"
+            1
+
     module Command =
         let create name description (handler: 'a -> IConsole -> Task<int>) =
             let cmd = Command (

@@ -112,13 +112,6 @@ type Options = {
 }
 
 let run (options: Options) (console: IConsole) =
-    let handleFailure =
-        function
-        | Ok code -> code
-        | Error message ->
-            console.Error.Write $"Error parsing file: {message}"
-            1
-
     task {
         use file = options.input.OpenRead()
         use reader = new StreamReader(file)
@@ -142,7 +135,7 @@ let run (options: Options) (console: IConsole) =
 
                 return 0
             }
-            |> handleFailure
+            |> handleFailure console
     }
 
 let command = Command.create "day13" "Transparent Origami" run
