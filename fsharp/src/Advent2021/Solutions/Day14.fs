@@ -10,16 +10,63 @@ module InsertionRules =
     let ofList = Map.ofList >> InsertionRules
 
     let private insertPolymer (target: array<char>) (InsertionRules rules) =
-        let polymer = rules |> Map.tryFind target
+        let polymer = rules[target]
 
-        target[0] :: Option.toList polymer
+        [ target[0]; polymer; target[1] ]
 
     let apply (xs: string) rules =
         xs
         |> Seq.windowed 2
-        |> Seq.collect (flip insertPolymer rules)
+        |> Seq.collect (fun p -> (insertPolymer p rules)[..1])
         |> flip Seq.append (xs |> Seq.tryLast |> Option.toList)
         |> String.ofSeq
+
+    let occurances template steps rules =
+        let sumValues =
+            Seq.fold
+                (fun map (pair, x) ->
+                    let count =
+                        Map.tryFind pair map |> Option.defaultValue 0L
+
+                    Map.add pair (x + count) map)
+                Map.empty
+
+        let initialStats =
+            template
+            |> Seq.windowed 2
+            |> Seq.map (fun k -> k, 1L)
+            |> sumValues
+
+        let rec occurances' n map =
+            if n = 0 then
+                map
+            else
+                Map.toSeq map
+                |> Seq.collect (fun (k, v) ->
+                    insertPolymer k rules
+                    |> Seq.windowed 2
+                    |> Seq.map (fun key -> key, v))
+                |> sumValues
+                |> occurances' (n - 1)
+
+        monad' {
+            let! last = String.tryLast template
+
+            return
+                occurances' steps initialStats
+                |> Map.add [| last |] 1L
+                |> Map.toSeq
+                |> Seq.fold
+                    (fun map (arr, count) ->
+                        let ch = arr[0]
+
+                        let count =
+                            count + (map |> Map.tryFind ch |> Option.defaultValue 0L)
+
+                        Map.add ch count map)
+                    Map.empty
+        }
+        |> Option.defaultValue Map.empty
 
 module Parser =
     open FSharpPlus
@@ -55,7 +102,10 @@ open System.IO
 
 open FSharpPlus
 
-type Options = { input: FileInfo; steps: int; print: bool }
+type Options =
+    { input: FileInfo
+      steps: int
+      print: bool }
 
 let run (options: Options) (console: IConsole) =
     task {
@@ -78,23 +128,20 @@ let run (options: Options) (console: IConsole) =
 
                 console.Out.Write $"Steps: {options.steps}\n"
 
-                let iteration = Seq.item options.steps polymerized
-
                 if options.print then
+                    let iteration = Seq.item options.steps polymerized
                     console.Out.Write $"\nResult\n======\n"
                     console.Out.Write iteration
 
-                let stats =
-                    iteration
-                    |> Seq.groupBy id
-                    |> Seq.map (fun (k, v) -> k, Seq.length v)
-                    |> List.ofSeq
-
                 console.Out.Write $"\nOccurences\n==========\n"
+
+                let stats =
+                    InsertionRules.occurances template options.steps rules
+                    |> Map.toList
+
                 stats
-                |> List.sortBy (fun (k, v) -> k)
-                |> List.iter (fun (key, value) ->
-                    console.Out.Write $"{key}: {value}\n")
+                |> List.sortBy (fun (k, _) -> k)
+                |> List.iter (fun (key, value) -> console.Out.Write $"{key}: {value}\n")
 
                 let min = List.minBy snd stats
                 let max = List.maxBy snd stats
@@ -119,6 +166,7 @@ let command =
             getDefaultValue = fun () -> 10
         )
     )
+
     command.AddOption (
         Option<bool> (
             aliases = [| "-p"; "--print" |],
