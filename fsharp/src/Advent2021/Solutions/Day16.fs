@@ -131,7 +131,6 @@ module Packet =
         packet
 
     let decode str =
-        let t = toBinaryRep str
         match runParserOnString packet 0us "packet parser" (toBinaryRep str) with
         | Success (packet, _, _) -> Result.Ok packet
         | Failure (message, _, _) -> Result.Error message
