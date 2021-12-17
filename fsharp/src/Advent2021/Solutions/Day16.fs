@@ -121,9 +121,7 @@ module Packet =
             >>= (fun n -> setUserState (uint16 n) >>. preturn n)
 
         let payload =
-            userStateSatisfies (fun x ->
-                x = 4us)
-            >>. literalValue <?> "literal value"
+            userStateSatisfies ((=) 4us) >>. literalValue <?> "literal value"
             <|> operator <?> "operator"
 
         let header = (version .>>. typeId) <?> "packet header"
