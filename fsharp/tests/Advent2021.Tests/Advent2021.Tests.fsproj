@@ -7,7 +7,16 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Support.fs" />
-    <Compile Include="Solutions/*.fs" />
+    <Compile Include="Solutions/Day1.fs" />
+    <Compile Include="Solutions/Day2.fs" />
+    <Compile Include="Solutions/Day9.fs" />
+    <Compile Include="Solutions/Day10.fs" />
+    <Compile Include="Solutions/Day11.fs" />
+    <Compile Include="Solutions/Day12.fs" />
+    <Compile Include="Solutions/Day13.fs" />
+    <Compile Include="Solutions/Day14.fs" />
+    <Compile Include="Solutions/Day15.fs" />
+    <Compile Include="Solutions/Day16.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
