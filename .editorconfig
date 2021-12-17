@@ -10,6 +10,8 @@ trim_trailing_whitespace = true
 [*.fs]
 indent_style = space
 indent_size = 4
+fsharp_space_before_uppercase_invocation = true
+fsharp_space_before_class_constructor = true
 
 [*.{rs,toml}]
 indent_style = space
