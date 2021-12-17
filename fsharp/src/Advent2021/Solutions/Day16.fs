@@ -142,6 +142,28 @@ module Packet =
     let typeId packet = packet.TypeId
     let payload packet = packet.Payload
 
+    let rec eval =
+        function
+        | { TypeId = 0uy
+            Payload = SubPackets packets } -> List.map eval packets |> List.sum
+        | { TypeId = 1uy
+            Payload = SubPackets packets } -> List.map eval packets |> List.reduce (*)
+        | { TypeId = 2uy
+            Payload = SubPackets packets } -> List.map eval packets |> List.min
+        | { TypeId = 3uy
+            Payload = SubPackets packets } -> List.map eval packets |> List.max
+        | { TypeId = 4uy
+            Payload = Literal x } -> x
+        | { TypeId = 5uy
+            Payload = SubPackets [ lhs; rhs ] } -> if eval lhs > eval rhs then 1I else 0I
+        | { TypeId = 6uy
+            Payload = SubPackets [ lhs; rhs ] } -> if eval lhs < eval rhs then 1I else 0I
+        | { TypeId = 7uy
+            Payload = SubPackets [ lhs; rhs ] } -> if eval lhs = eval rhs then 1I else 0I
+        | p -> failwith $"packet {p} that cannot be evaluated was evaluated (Santa is doomed, probably)"
+
+
+
 open System.CommandLine
 open System.IO
 
@@ -175,6 +197,9 @@ let run (options: Options) (console: IConsole) =
 
                 let versionSums = sumVersionNumbers packet
                 console.Out.Write $"The sum of the version numbers is {versionSums}.\n"
+
+                let result = Packet.eval packet
+                console.Out.Write $"The result of evaluating the packet: {result}\n"
 
                 return 0
             }
