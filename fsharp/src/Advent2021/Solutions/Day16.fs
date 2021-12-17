@@ -159,8 +159,6 @@ module Packet =
             Payload = SubPackets [ lhs; rhs ] } -> if eval lhs = eval rhs then 1I else 0I
         | p -> failwith $"packet {p} that cannot be evaluated was evaluated (Santa is doomed, probably)"
 
-
-
 open System.CommandLine
 open System.IO
 
