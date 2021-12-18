@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <Product>Advent2021</Product>
-    <VersionPrefix>2021.12.16</VersionPrefix>
+    <VersionPrefix>2021.12.17</VersionPrefix>
   </PropertyGroup>
   <PropertyGroup>
     <Copyright>Copyright © 2021 Randy Eckenrode</Copyright>

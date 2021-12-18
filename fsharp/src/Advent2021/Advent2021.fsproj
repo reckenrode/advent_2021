@@ -17,6 +17,7 @@
     <Compile Include="Solutions/Day14.fs" />
     <Compile Include="Solutions/Day15.fs" />
     <Compile Include="Solutions/Day16.fs" />
+    <Compile Include="Solutions/Day17.fs" />
     <Compile Include="Cli.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
