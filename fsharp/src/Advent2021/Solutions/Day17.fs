@@ -95,13 +95,22 @@ let run (options: Options) (console: IConsole) =
               Width = options.XEnd - options.XStart
               Height = options.YEnd - options.YStart }
 
+        // Assume the target area is to the right and down
+        let maxX =
+            (Target.position >> Point.x) target
+            + Target.width target
+
+        let minY =
+            (Target.position >> Point.y) target
+            - Target.height target
+
         let! velocities =
-            seq { -250 .. 250 }
+            seq { 0 .. maxX }
             |> AsyncSeq.ofSeq
             |> AsyncSeq.mapAsyncParallel (fun x ->
                 async {
                     return
-                        seq { -250 .. 250 }
+                        seq { minY .. -minY }
                         |> AsyncSeq.ofSeq
                         |> AsyncSeq.mapAsyncParallel (fun y ->
                             async {
@@ -109,14 +118,18 @@ let run (options: Options) (console: IConsole) =
                                     Probe.create { X = x; Y = y }
                                     |> Probe.steps
                                     |> Seq.take 1000
-                                // |> Seq.takeWhile (fun pt -> Point.y pt > options.YEnd)
 
                                 return
-                                    if Seq.exists (flip Target.check target) pts then
-                                        let maxY = Seq.maxBy Point.y pts
-                                        Some ({ X = x; Y = y }, Point.y maxY)
-                                    else
-                                        None
+                                    match Seq.tryFindIndex (flip Target.check target) pts with
+                                    | Some index ->
+                                        let maxY =
+                                            pts
+                                            |> Seq.take index
+                                            |> Seq.map Point.y
+                                            |> Seq.max
+
+                                        Some ({ X = x; Y = y }, maxY)
+                                    | _ -> None
                             })
                         |> AsyncSeq.chooseAsync (fun opt -> async { return opt })
                 })
@@ -129,6 +142,7 @@ let run (options: Options) (console: IConsole) =
 
         if options.Print then
             console.Out.Write "\nVelocities\n==========\n"
+
             velocities
             |> List.iter (fun (v, _) -> console.Out.Write $"({Velocity.x v},{Velocity.y v})\n")
 
