@@ -26,6 +26,7 @@ module Velocity =
 
     let decay v = { X = v.X - (sign v.X); Y = v.Y - 1 }
 
+[<Struct>]
 type Probe = { Position: Point; Velocity: Velocity }
 
 module Probe =
@@ -104,37 +105,28 @@ let run (options: Options) (console: IConsole) =
             (Target.position >> Point.y) target
             - Target.height target
 
-        let! velocities =
+        let velocities =
             seq { 0 .. maxX }
-            |> AsyncSeq.ofSeq
-            |> AsyncSeq.mapAsyncParallel (fun x ->
-                async {
-                    return
-                        seq { minY .. -minY }
-                        |> AsyncSeq.ofSeq
-                        |> AsyncSeq.mapAsyncParallel (fun y ->
-                            async {
-                                let pts =
-                                    Probe.create { X = x; Y = y }
-                                    |> Probe.steps
-                                    |> Seq.take 1000
+            |> Seq.skipWhile (fun x -> x * (x + 1) < 2 * (Target.position >> Point.x) target)
+            |> Seq.collect (fun x ->
+                seq { minY .. -minY }
+                |> Seq.choose (fun y ->
+                    let pts =
+                        Probe.create { X = x; Y = y }
+                        |> Probe.steps
+                        |> Seq.take 1000
 
-                                return
-                                    match Seq.tryFindIndex (flip Target.check target) pts with
-                                    | Some index ->
-                                        let maxY =
-                                            pts
-                                            |> Seq.take index
-                                            |> Seq.map Point.y
-                                            |> Seq.max
+                    match Seq.tryFindIndex (flip Target.check target) pts with
+                    | Some index ->
+                        let maxY =
+                            pts
+                            |> Seq.take index
+                            |> Seq.map Point.y
+                            |> Seq.max
 
-                                        Some ({ X = x; Y = y }, maxY)
-                                    | _ -> None
-                            })
-                        |> AsyncSeq.chooseAsync (fun opt -> async { return opt })
-                })
-            |> AsyncSeq.collect id
-            |> AsyncSeq.toListAsync
+                        Some ({ X = x; Y = y }, maxY)
+                    | _ -> None))
+            |> List.ofSeq
 
         let v, maxY = List.maxBy snd velocities
         console.Out.Write $"Out of {List.length velocities} starting velocities:\n"
