@@ -4,26 +4,34 @@ module Advent2021.Solutions.Day18
 
 open FSharpPlus
 
+let debug x =
+    printfn "{x}"
+    x
+
 type Cell =
     { Depth: uint32
       Value: uint64 }
 
-    static member (+)(lhs, rhs) =
+    static member (+) (lhs, rhs) =
         { lhs with Value = lhs.Value + rhs.Value }
 
-    static member (+)(lhs, rhs: uint32) = { lhs with Depth = lhs.Depth + rhs }
+    static member (+) (lhs, rhs: uint32) = { lhs with Depth = lhs.Depth + rhs }
 
-    static member (/)(lhs, rhs: uint64) =
+    static member (/) (lhs, rhs: uint64) =
         { Depth = lhs.Depth + 1u
           Value = lhs.Value / rhs }
 
-    static member (/^)(lhs, rhs: uint64) =
+    static member (/^) (lhs, rhs: uint64) =
         let value = lhs.Value / rhs + lhs.Value % 2UL
 
         { Depth = lhs.Depth + 1u
           Value = value }
 
     static member Zero = { Depth = zero; Value = zero }
+
+module Cell =
+    let depth (c: Cell) = c.Depth
+    let value (c: Cell) = c.Value
 
 type SnailfishNumber =
     private
@@ -32,8 +40,8 @@ type SnailfishNumber =
     member this.Reduce () =
         let (SnailfishNumber num) = this
 
-        let rec reduce' visited num =
-            match num with
+        let rec reduce' visited =
+            function
             | lhs :: rhs :: successor :: rest when lhs.Depth = rhs.Depth && lhs.Depth = 4u ->
                 List.append
                     (rev visited)
@@ -67,9 +75,21 @@ type SnailfishNumber =
                 List.append lhs rhs
                 |> List.map (fun cell -> { cell with Depth = cell.Depth + 1u })
                 |> SnailfishNumber
+
             result.Reduce ()
 
     static member Zero = SnailfishNumber []
+
+    override this.ToString () =
+        let (SnailfishNumber num) = this
+        let depths, nums =
+            num
+            |> map (fun cell -> string cell.Depth, string cell.Value)
+            |> unzip
+
+        let depths = String.intercalate " " depths
+        let nums = String.intercalate " " nums
+        $"\t{depths}\n\t{nums}"
 
 module SnailfishNumber =
     open FParsec
@@ -79,22 +99,23 @@ module SnailfishNumber =
         | Element of uint64
 
     let magnitude (SnailfishNumber num) =
-        let rec magnitude' acc =
+        let rec magnitude' depth acc =
             function
             | [] ->
                 match acc with
                 | x :: [] -> x.Value
-                | xs -> magnitude' [] (rev xs)
-            | x :: [] -> magnitude' (x :: acc) []
-            | lhs :: rhs :: rest when lhs.Depth = rhs.Depth ->
+                | xs -> magnitude' (depth - 1u) [] (rev xs)
+            | x :: [] -> magnitude' depth (x :: acc) []
+            | lhs :: rhs :: rest when lhs.Depth = rhs.Depth && lhs.Depth = depth ->
                 magnitude'
+                    depth
                     ({ Depth = lhs.Depth - 1u
                        Value = 3UL * lhs.Value + 2UL * rhs.Value }
                      :: acc)
                     rest
-            | lhs :: rest -> magnitude' (lhs :: acc) rest
+            | lhs :: rest -> magnitude' depth (lhs :: acc) rest
 
-        magnitude' [] num
+        magnitude' (List.maxBy Cell.depth num |> Cell.depth) [] num
 
     let reduce (num: SnailfishNumber) = num.Reduce ()
 
@@ -141,25 +162,42 @@ open FSharp.Control
 open System.CommandLine
 open System.IO
 
-type Options = {
-    Input: FileInfo
-}
+type Options = { Input: FileInfo }
 
 let run (options: Options) (console: IConsole) =
+    let rec snailwisePairs =
+        function
+        | x :: xs ->
+            unzip (map (fun y -> (x, y), (y, x)) xs)
+            |> uncurry List.append
+            |> flip List.append (snailwisePairs xs)
+
+        | [] -> []
+
     task {
         use file = options.Input.OpenRead ()
         use reader = new StreamReader (file)
 
         let lines = lines reader
 
-        let problems =
+        let! problems =
             lines
             |> AsyncSeq.choose SnailfishNumber.tryParse
+            |> AsyncSeq.toListAsync
 
-        let! sum = AsyncSeq.sum problems
+        let sum = List.sum problems
         let magnitude = SnailfishNumber.magnitude sum
 
         console.Out.Write $"The magnitude of the sum of the problem is: {magnitude}\n"
+
+        let pairs = snailwisePairs problems
+
+        let largestMagnitude =
+            pairs
+            |> List.map (uncurry (+) >> SnailfishNumber.magnitude)
+            |> List.max
+
+        console.Out.Write $"The largest magnitude of two of the addends: {largestMagnitude}\n"
 
         return 0
     }
