@@ -4,4 +4,5 @@ FSharpPlus
 FSharpPlus.TypeLevel
 FSharpx.Extras
 System.CommandLine
+System.CommandLine.NamingConventionBinder
 System.CommandLine.Rendering

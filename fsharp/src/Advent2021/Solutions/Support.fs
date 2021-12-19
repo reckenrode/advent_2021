@@ -4,7 +4,7 @@ namespace Advent2021.Solutions
 
 open System
 open System.CommandLine
-open System.CommandLine.Invocation
+open System.CommandLine.NamingConventionBinder
 open System.IO
 open System.Reflection
 open System.Threading.Tasks

@@ -75,7 +75,7 @@ module Target =
         && y <= yUpper
 
 open System.CommandLine
-open System.CommandLine.Invocation
+open System.CommandLine.NamingConventionBinder
 
 open FSharp.Control
 open FSharpPlus

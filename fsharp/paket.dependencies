@@ -13,6 +13,7 @@ nuget FSharpPlus ~> 1.2
 nuget FSharpPlus.TypeLevel ~> 1.2
 nuget FSharpx.Extras ~> 3.0
 nuget Microsoft.NET.Test.Sdk ~> 17.0
-nuget System.CommandLine = 2.0.0-beta1.21308.1
-nuget System.CommandLine.Rendering = 0.3.0-alpha.21216.1
+nuget System.CommandLine ~> 2.0.0-beta2.21617.1
+nuget System.CommandLine.NamingConventionBinder ~> 2.0.0-beta2.21617.1
+nuget System.CommandLine.Rendering ~> 0.4.0-alpha.21617.1
 nuget YoloDev.Expecto.TestSdk ~> 0.12
