@@ -74,9 +74,9 @@ open System.IO
 open FSharpPlus
 
 type Options = {
-    input: FileInfo
-    print: bool
-    allowRevisit: bool
+    Input: FileInfo
+    Print: bool
+    AllowRevisit: bool
 }
 
 let run (options: Options) (console: IConsole) =
@@ -87,12 +87,12 @@ let run (options: Options) (console: IConsole) =
         1
     task {
         return monad' {
-            use file = options.input.OpenRead ()
+            use file = options.Input.OpenRead ()
             let! graph = Graph.parse file.Name file
 
-            let paths = Graph.paths graph options.allowRevisit
+            let paths = Graph.paths graph options.AllowRevisit
             console.Out.Write $"There are {Set.count paths} paths\n"
-            if options.print then Seq.iter (fun path -> console.Out.Write $"{path}\n") paths
+            if options.Print then Seq.iter (fun path -> console.Out.Write $"{path}\n") paths
 
             return 0
         }

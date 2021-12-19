@@ -103,13 +103,13 @@ open System.IO
 open FSharpPlus
 
 type Options =
-    { input: FileInfo
-      steps: int
-      print: bool }
+    { Input: FileInfo
+      Steps: int
+      Print: bool }
 
 let run (options: Options) (console: IConsole) =
     task {
-        use file = options.input.OpenRead ()
+        use file = options.Input.OpenRead ()
         use reader = new StreamReader (file)
         let! input = reader.ReadToEndAsync ()
 
@@ -126,17 +126,17 @@ let run (options: Options) (console: IConsole) =
 
                     polymerized template
 
-                console.Out.Write $"Steps: {options.steps}\n"
+                console.Out.Write $"Steps: {options.Steps}\n"
 
-                if options.print then
-                    let iteration = Seq.item options.steps polymerized
+                if options.Print then
+                    let iteration = Seq.item options.Steps polymerized
                     console.Out.Write $"\nResult\n======\n"
                     console.Out.Write iteration
 
                 console.Out.Write $"\nOccurences\n==========\n"
 
                 let stats =
-                    InsertionRules.occurances template options.steps rules
+                    InsertionRules.occurances template options.Steps rules
                     |> Map.toList
 
                 stats

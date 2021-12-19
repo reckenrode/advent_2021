@@ -11,10 +11,10 @@ let tests = testList "Day13" [
     testList "horizontal reflections" [
         test "it flips the points up" {
             let expectedPoints = Points.ofList [
-                { x = 9; y = 4 }
+                { X = 9; Y = 4 }
             ]
             let startingPoints = Points.ofList [
-                { x = 9; y = 10 }
+                { X = 9; Y = 10 }
             ]
             let line = 7
             let points = Points.reflectHorizontal line startingPoints
@@ -23,12 +23,12 @@ let tests = testList "Day13" [
 
         test "it flips only the points below the line" {
             let expectedPoints = Points.ofList [
-                { x = 6; y = 0 }
-                { x = 9; y = 0 }
+                { X = 6; Y = 0 }
+                { X = 9; Y = 0 }
             ]
             let startingPoints = Points.ofList [
-                { x = 6; y = 0 }
-                { x = 9; y = 14 }
+                { X = 6; Y = 0 }
+                { X = 9; Y = 14 }
             ]
             let line = 7
             let points = Points.reflectHorizontal line startingPoints
@@ -37,11 +37,11 @@ let tests = testList "Day13" [
 
         test "it merges duplicate points" {
             let expectedPoints = Points.ofList [
-                { x = 6; y = 0 }
+                { X = 6; Y = 0 }
             ]
             let startingPoints = Points.ofList [
-                { x = 6; y = 0 }
-                { x = 6; y = 14 }
+                { X = 6; Y = 0 }
+                { X = 6; Y = 14 }
             ]
             let line = 7
             let points = Points.reflectHorizontal line startingPoints
@@ -52,10 +52,10 @@ let tests = testList "Day13" [
     testList "vertical reflections" [
         test "it flips the points left" {
             let expectedPoints = Points.ofList [
-                { x = 5; y = 10 }
+                { X = 5; Y = 10 }
             ]
             let startingPoints = Points.ofList [
-                { x = 9; y = 10 }
+                { X = 9; Y = 10 }
             ]
             let line = 7
             let points = Points.reflectVertical line startingPoints
@@ -64,12 +64,12 @@ let tests = testList "Day13" [
 
         test "it flips only the points to the right of the line" {
             let expectedPoints = Points.ofList [
-                { x = 6; y = 0 }
-                { x = 5; y = 14 }
+                { X = 6; Y = 0 }
+                { X = 5; Y = 14 }
             ]
             let startingPoints = Points.ofList [
-                { x = 6; y = 0 }
-                { x = 9; y = 14 }
+                { X = 6; Y = 0 }
+                { X = 9; Y = 14 }
             ]
             let line = 7
             let points = Points.reflectVertical line startingPoints
@@ -78,11 +78,11 @@ let tests = testList "Day13" [
 
         test "it merges duplicate points" {
             let expectedPoints = Points.ofList [
-                { x = 6; y = 0 }
+                { X = 6; Y = 0 }
             ]
             let startingPoints = Points.ofList [
-                { x = 6; y = 0 }
-                { x = 8; y = 0 }
+                { X = 6; Y = 0 }
+                { X = 8; Y = 0 }
             ]
             let line = 7
             let points = Points.reflectVertical line startingPoints
@@ -94,24 +94,24 @@ let tests = testList "Day13" [
         test "it parses the instructions" {
             let expectedInstructions = Ok (
                 Points.ofList [
-                    { x = 6; y = 10 }
-                    { x = 0; y = 14 }
-                    { x = 9; y = 10 }
-                    { x = 0; y = 3 }
-                    { x = 10; y = 4 }
-                    { x = 4; y = 11 }
-                    { x = 6; y = 0 }
-                    { x = 6; y = 12 }
-                    { x = 4; y = 1 }
-                    { x = 0; y = 13 }
-                    { x = 10; y = 12 }
-                    { x = 3; y = 4 }
-                    { x = 3; y = 0 }
-                    { x = 8; y = 4 }
-                    { x = 1; y = 10 }
-                    { x = 2; y = 14 }
-                    { x = 8; y = 10 }
-                    { x = 9; y = 0 }
+                    { X = 6; Y = 10 }
+                    { X = 0; Y = 14 }
+                    { X = 9; Y = 10 }
+                    { X = 0; Y = 3 }
+                    { X = 10; Y = 4 }
+                    { X = 4; Y = 11 }
+                    { X = 6; Y = 0 }
+                    { X = 6; Y = 12 }
+                    { X = 4; Y = 1 }
+                    { X = 0; Y = 13 }
+                    { X = 10; Y = 12 }
+                    { X = 3; Y = 4 }
+                    { X = 3; Y = 0 }
+                    { X = 8; Y = 4 }
+                    { X = 1; Y = 10 }
+                    { X = 2; Y = 14 }
+                    { X = 8; Y = 10 }
+                    { X = 9; Y = 0 }
                 ],
                 [
                     Instructions.Horizontal 7
@@ -148,14 +148,14 @@ let tests = testList "Day13" [
     testList "rendering" [
         test "it renders a point as a hash" {
             let expectedOutput = "#"
-            let input = Points.ofList [ { x = 0; y = 0 }]
+            let input = Points.ofList [ { X = 0; Y = 0 }]
             let output = Points.render input
             Expect.equal output expectedOutput "the outputs match"
         }
 
         test "it renders empty points as a dot" {
             let expectedOutput = ".#"
-            let input = Points.ofList [ { x = 1; y = 0 }]
+            let input = Points.ofList [ { X = 1; Y = 0 }]
             let output = Points.render input
             Expect.equal output expectedOutput "the outputs match"
         }

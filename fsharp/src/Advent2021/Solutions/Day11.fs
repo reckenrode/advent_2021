@@ -55,8 +55,7 @@ module OctopusField =
                 ]
             let neighborFlashes =
                 neighbors
-                |> List.map (flip Set.contains flashed >> ToUInt32)
-                |> List.sum
+                |> List.sumBy (flip Set.contains flashed >> ToUInt32)
             let newValue = value + neighborFlashes + ToUInt32 (Set.isEmpty flashed)
             let maybeFlashed =
                 if newValue > 9u && not (Set.contains (row, column) flashed)

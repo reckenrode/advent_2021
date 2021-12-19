@@ -15,7 +15,7 @@ let tests = testList "Day2" [
         new StringReader "forward 5\ndown 5\nforward 8\nup 3\ndown 8\nforward 2\n"
 
     let example number expected useAim =
-        testTask $"example {number} has distance {expected.distance} and depth {expected.depth}" {
+        testTask $"example {number} has distance {expected.Distance} and depth {expected.Depth}" {
             use input = inputStream ()
             let! program = Program.parse input useAim
             Expect.isOk program "program parsed okay"
@@ -23,6 +23,6 @@ let tests = testList "Day2" [
             Expect.equal result expected "the product matches"
         }
 
-    example 1 { distance = 15; depth = 10; aim = 0 } false
-    example 2 { distance = 15; depth = 60; aim = 10 } true
+    example 1 { Distance = 15; Depth = 10; Aim = 0 } false
+    example 2 { Distance = 15; Depth = 60; Aim = 10 } true
 ]

@@ -142,7 +142,7 @@ module Packet =
     let rec eval =
         function
         | { TypeId = 0uy
-            Payload = SubPackets packets } -> List.map eval packets |> List.sum
+            Payload = SubPackets packets } -> List.sumBy eval packets
         | { TypeId = 1uy
             Payload = SubPackets packets } -> List.map eval packets |> List.reduce (*)
         | { TypeId = 2uy

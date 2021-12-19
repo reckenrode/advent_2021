@@ -23,25 +23,25 @@ let tests = testList "Day9.Heightmap" [
     ]
     testList "filter" [
         test "it applies the filter" {
-            let expectedOutput = Ok ([ { row = 0; column = 0; value = 1uy } ])
+            let expectedOutput = Ok ([ { Row = 0; Column = 0; Value = 1uy } ])
             let output = monad' {
                 let! hm = HeightMap.parse "1\n2"
-                let result = hm |> HeightMap.filter (fun pt _ -> pt.value = 1uy)
+                let result = hm |> HeightMap.filter (fun pt _ -> pt.Value = 1uy)
                 return List.ofSeq result
             }
             Expect.equal output expectedOutput "the filter results match"
         }
         test "it includes the neighbors" {
-            let expectedOutput = Ok ([ { row = 1; column = 1; value = 1uy } ])
+            let expectedOutput = Ok ([ { Row = 1; Column = 1; Value = 1uy } ])
             let output = monad' {
                 let! hm = HeightMap.parse "111\n111\n111"
                 let result = hm |> HeightMap.filter (fun pt neighbors ->
                     match neighbors with
                     | {
-                        top = Some top; bottom = Some bottom; left = Some left; right = Some right
+                        Top = Some top; Bottom = Some bottom; Left = Some left; Right = Some right
                       } ->
-                        top.value = 1uy && bottom.value = 1uy && left.value = 1uy
-                        && right.value = 1uy && pt.value = 1uy
+                        top.Value = 1uy && bottom.Value = 1uy && left.Value = 1uy
+                        && right.Value = 1uy && pt.Value = 1uy
                     | _ -> false
                 )
                 return List.ofSeq result
@@ -52,20 +52,20 @@ let tests = testList "Day9.Heightmap" [
     testList "mapBasin" [
         test "it maps the entire basin from the lowest point" {
             let expectedBasin = Ok (Set.ofList [
-                { row = 1; column = 2; value = 8uy }
-                { row = 1; column = 3; value = 7uy }
-                { row = 1; column = 4; value = 8uy }
-                { row = 2; column = 1; value = 8uy }
-                { row = 2; column = 2; value = 5uy }
-                { row = 2; column = 3; value = 6uy }
-                { row = 2; column = 4; value = 7uy }
-                { row = 2; column = 5; value = 8uy }
-                { row = 3; column = 0; value = 8uy }
-                { row = 3; column = 1; value = 7uy }
-                { row = 3; column = 2; value = 6uy }
-                { row = 3; column = 3; value = 7uy }
-                { row = 3; column = 4; value = 8uy }
-                { row = 4; column = 1; value = 8uy }
+                { Row = 1; Column = 2; Value = 8uy }
+                { Row = 1; Column = 3; Value = 7uy }
+                { Row = 1; Column = 4; Value = 8uy }
+                { Row = 2; Column = 1; Value = 8uy }
+                { Row = 2; Column = 2; Value = 5uy }
+                { Row = 2; Column = 3; Value = 6uy }
+                { Row = 2; Column = 4; Value = 7uy }
+                { Row = 2; Column = 5; Value = 8uy }
+                { Row = 3; Column = 0; Value = 8uy }
+                { Row = 3; Column = 1; Value = 7uy }
+                { Row = 3; Column = 2; Value = 6uy }
+                { Row = 3; Column = 3; Value = 7uy }
+                { Row = 3; Column = 4; Value = 8uy }
+                { Row = 4; Column = 1; Value = 8uy }
             ])
             let basin = monad' {
                 let! hm =

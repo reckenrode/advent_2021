@@ -17,7 +17,7 @@ module Syntax =
             (chunk '{' '}')
             (chunk '<' '>')
         |])
-        |>> (fun _ -> ())
+        |>> ignore
         let chunks = chunks .>> eof
         match run chunks str with
         | Success _ -> Result.Ok str

@@ -2,10 +2,10 @@
 
 module Advent2021.Solutions.Day13
 
-type Point = { x: int; y: int }
+type Point = { X: int; Y: int }
 
 module Point =
-    let origin = { x = 0; y = 0 }
+    let origin = { X = 0; Y = 0 }
 
 type Points = Points of Set<Point>
 
@@ -22,32 +22,32 @@ module Points =
 
         reflected
         |> Set.map (fun pt ->
-            let v = vector (pt.x, pt.y, 1) |> Vector.toCol
+            let v = vector (pt.X, pt.Y, 1) |> Vector.toCol
             let m = Matrix.matrixProduct t v
 
-            { x = Matrix.get Z Z m
-              y = Matrix.get (S Z) Z m })
+            { X = Matrix.get Z Z m
+              Y = Matrix.get (S Z) Z m })
         |> Set.union unchanged
         |> Points
 
     let reflectHorizontal y =
-        reflect (matrix ((1, 0, 0), (0, -1, 2 * y), (0, 0, 1))) (fun pt -> pt.y <= y)
+        reflect (matrix ((1, 0, 0), (0, -1, 2 * y), (0, 0, 1))) (fun pt -> pt.Y <= y)
 
     let reflectVertical x =
-        reflect (matrix ((-1, 0, 2 * x), (0, 1, 0), (0, 0, 1))) (fun pt -> pt.x <= x)
+        reflect (matrix ((-1, 0, 2 * x), (0, 1, 0), (0, 0, 1))) (fun pt -> pt.X <= x)
 
     let render (Points pts) =
         let bounds =
             pts
             |> Set.fold
-                (fun bound ({ x = x; y = y }) -> { x = max bound.x x; y = max bound.y y })
+                (fun bound ({ X = x; Y = y }) -> { X = max bound.X x; Y = max bound.Y y })
                 Point.origin
 
-        seq { 0 .. bounds.y }
+        seq { 0 .. bounds.Y }
         |> Seq.map (fun y ->
-            seq { 0 .. bounds.x }
+            seq { 0 .. bounds.X }
             |> Seq.map (fun x ->
-                if Set.contains { x = x; y = y } pts then
+                if Set.contains { X = x; Y = y } pts then
                     "#"
                 else
                     ".")
@@ -77,8 +77,8 @@ module Instructions =
         let point =
             number "x" .>> pstring "," .>>. number "y"
             |>> (fun (lhs, rhs) ->
-                { x = ToInt32 (lhs.String, 10)
-                  y = ToInt32 (rhs.String, 10) })
+                { X = ToInt32 (lhs.String, 10)
+                  Y = ToInt32 (rhs.String, 10) })
 
         let points = sepBy1 point (newlineThen point) |>> Points.ofList
 
@@ -108,12 +108,12 @@ open System.IO
 open FSharpPlus
 
 type Options = {
-    input: FileInfo
+    Input: FileInfo
 }
 
 let run (options: Options) (console: IConsole) =
     task {
-        use file = options.input.OpenRead()
+        use file = options.Input.OpenRead()
         use reader = new StreamReader(file)
         let! input = reader.ReadToEndAsync()
 

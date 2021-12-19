@@ -55,8 +55,8 @@ type SnailfishNumber =
                     :: Cell.Zero + (lhs.Depth - 1u)
                         :: successor + rhs :: rest)
                 |> reduce' []
-            | prior :: lhs :: rhs :: [] when lhs.Depth = rhs.Depth && lhs.Depth = 4u ->
-                List.append (rev visited) (prior + lhs :: Cell.Zero + (lhs.Depth - 1u) :: [])
+            | prior :: lhs :: [ rhs ] when lhs.Depth = rhs.Depth && lhs.Depth = 4u ->
+                List.append (rev visited) (prior + lhs :: [ Cell.Zero + (lhs.Depth - 1u) ])
                 |> reduce' []
             | x :: xs when x.Value >= 10UL ->
                 List.append (rev visited) (x / 2UL :: x /^ 2UL :: xs)
@@ -103,9 +103,9 @@ module SnailfishNumber =
             function
             | [] ->
                 match acc with
-                | x :: [] -> x.Value
+                | [ x ] -> x.Value
                 | xs -> magnitude' (depth - 1u) [] (rev xs)
-            | x :: [] -> magnitude' depth (x :: acc) []
+            | [ x ] -> magnitude' depth (x :: acc) []
             | lhs :: rhs :: rest when lhs.Depth = rhs.Depth && lhs.Depth = depth ->
                 magnitude'
                     depth

@@ -3,12 +3,12 @@
 module Advent2021.Solutions.Day15
 
 [<Struct>]
-type Point = { row: int; column: int; value: uint }
+type Point = { Row: int; Column: int; Value: uint }
 
 type Graph = private {
-    cells: array<uint32>
-    rows: int
-    columns: int }
+    Cells: array<uint32>
+    Rows: int
+    Columns: int }
 
 module Graph =
     open System
@@ -16,8 +16,8 @@ module Graph =
 
     open FSharpPlus
 
-    let rows { rows = rows } = rows
-    let columns { columns = columns } = columns
+    let rows { Rows = rows } = rows
+    let columns { Columns = columns } = columns
 
     let ofList lst =
         monad' {
@@ -30,16 +30,16 @@ module Graph =
                 let arr =
                     List.collect id lst
                     |> Array.ofList
-                Ok { cells = arr; rows = rows; columns = columns }
+                Ok { Cells = arr; Rows = rows; Columns = columns }
         }
         |> Option.defaultValue (
-            Ok { cells = Array.zeroCreate 0; rows = 0; columns = 0 }
+            Ok { Cells = Array.zeroCreate 0; Rows = 0; Columns = 0 }
         )
 
     let grow (xTimes, yTimes) graph =
         let wrap x = 1u + (x - 1u) % 9u
         [ for row in 0 .. rows graph - 1 do
-            [ for column in 0 .. columns graph - 1 -> graph.cells[row * rows graph + column] ] ]
+            [ for column in 0 .. columns graph - 1 -> graph.Cells[row * rows graph + column] ] ]
         |> List.map
            (List.replicate (xTimes + 1)
             >> List.mapi (fun idx lst -> List.map (((+) (uint32 idx)) >> wrap) lst)
@@ -51,14 +51,14 @@ module Graph =
         |> Result.get
 
     let shortestPathCost start goal graph =
-        let { cells = cells; rows = rows; columns = columns } = graph
+        let { Cells = cells; Rows = rows; Columns = columns } = graph
 
         let idx row column = row * columns + column
 
         let tryGetNode = function
             | row, column when row >= 0 && column >= 0 && row < rows && column < columns ->
                 Array.tryItem (idx row column)
-                >> Option.map (fun value -> { row = row; column = column; value = value })
+                >> Option.map (fun value -> { Row = row; Column = column; Value = value })
             | _ -> (fun _ -> None)
 
         let rec shortestPathCost' current (distances: array<uint32>) (visited: array<bool>) (visiting: PriorityQueue<int * int, uint32>) =
@@ -66,20 +66,20 @@ module Graph =
                 distances[idx <|| goal]
             else
                 [
-                    tryGetNode (current.row + 1, current.column) cells
-                    tryGetNode (current.row - 1, current.column) cells
-                    tryGetNode (current.row, current.column + 1) cells
-                    tryGetNode (current.row, current.column - 1) cells
+                    tryGetNode (current.Row + 1, current.Column) cells
+                    tryGetNode (current.Row - 1, current.Column) cells
+                    tryGetNode (current.Row, current.Column + 1) cells
+                    tryGetNode (current.Row, current.Column - 1) cells
                 ]
                 |> List.choose (function
-                    | Some pt as opt when not visited[idx pt.row pt.column] -> opt
+                    | Some pt as opt when not visited[idx pt.Row pt.Column] -> opt
                     | _ -> None)
                 |> List.iter (fun pt ->
-                    let currentDistance = distances[idx pt.row pt.column]
-                    let distance = distances[idx current.row current.column] + pt.value
+                    let currentDistance = distances[idx pt.Row pt.Column]
+                    let distance = distances[idx current.Row current.Column] + pt.Value
                     if distance < currentDistance then
-                        distances[idx pt.row pt.column] <- distance
-                        visiting.Enqueue ((pt.row, pt.column), distance))
+                        distances[idx pt.Row pt.Column] <- distance
+                        visiting.Enqueue ((pt.Row, pt.Column), distance))
                 let current =
                     visiting.Dequeue ()
                     |> flip tryGetNode cells
